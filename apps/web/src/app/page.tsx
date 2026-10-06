@@ -5,6 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 import { gql } from 'graphql-request';
 import { graphqlClient } from '@/lib/graphql-client';
 import { useTheme } from '@/components/providers';
+import Link from 'next/link';
+import { useAuth } from '@/lib/auth-context';
 import {
   FileText,
   Search,
@@ -61,6 +63,7 @@ interface HealthData {
 
 export default function HomePage() {
   const { theme, setTheme } = useTheme();
+  const { user, isAuthenticated, logout } = useAuth();
 
   const { data, isLoading } = useQuery<HealthData>({
     queryKey: ['system-health-and-models'],
@@ -88,7 +91,7 @@ export default function HomePage() {
           <div className="flex items-center space-x-3">
             <div className="hidden sm:flex items-center space-x-2 border border-border rounded px-2.5 py-1 text-xs text-muted-foreground font-mono">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>GraphQL Only: /graphql</span>
+              <span>GraphQL: /graphql</span>
             </div>
 
             <button
@@ -99,12 +102,34 @@ export default function HomePage() {
               {theme === 'dark' ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
             </button>
 
-            <a
-              href="#workspace-preview"
-              className="inline-flex h-8 items-center justify-center rounded border border-border bg-primary px-3 text-xs font-medium text-primary-foreground transition-colors hover:bg-neutral-800 dark:hover:bg-neutral-200"
-            >
-              Enter Workspace
-            </a>
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-2">
+                <span className="hidden md:inline text-xs text-muted-foreground font-mono">
+                  {user?.email}
+                </span>
+                <button
+                  onClick={() => logout()}
+                  className="inline-flex h-8 items-center justify-center rounded border border-border bg-card px-2.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+                >
+                  Sign out
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Link
+                  href="/login"
+                  className="inline-flex h-8 items-center justify-center rounded border border-border bg-card px-2.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/register"
+                  className="inline-flex h-8 items-center justify-center rounded bg-primary px-3 text-xs font-medium text-primary-foreground transition-colors hover:bg-neutral-800 dark:hover:bg-neutral-200"
+                >
+                  Register
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </header>

@@ -105,9 +105,19 @@ type SystemHealth {
   redis: Boolean!
 }
 
+type SessionInfo {
+  id: ID!
+  userAgent: String
+  ipHash: String
+  isCurrent: Boolean!
+  createdAt: DateTime!
+  expiresAt: DateTime!
+}
+
 type Query {
   health: SystemHealth!
   me: User
+  mySessions: [SessionInfo!]!
   myWorkspaces: [Workspace!]!
   openRouterModels: [OpenRouterModel!]!
   documents(workspaceId: ID!): [Document!]!
@@ -120,6 +130,10 @@ type Mutation {
   login(input: LoginInput!): AuthPayload!
   logout: Boolean!
   refreshToken: AuthPayload!
+  requestPasswordReset(input: RequestPasswordResetInput!): Boolean!
+  resetPassword(input: ResetPasswordInput!): Boolean!
+  verifyEmail(token: String!): Boolean!
+  revokeSession(sessionId: ID!): Boolean!
 }
 
 input RegisterInput {
@@ -132,3 +146,13 @@ input LoginInput {
   email: String!
   password: String!
 }
+
+input RequestPasswordResetInput {
+  email: String!
+}
+
+input ResetPasswordInput {
+  token: String!
+  newPassword: String!
+}
+
