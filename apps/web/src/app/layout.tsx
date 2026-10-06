@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description:
     'A production-grade full-stack workspace for document intelligence, semantic search, grounded AI research, and collaborative knowledge management.',
   icons: {
-    icon: '/favicon.ico',
+    icon: '/icon.svg',
   },
 };
 

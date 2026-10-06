@@ -2,8 +2,10 @@ import { GraphQLClient } from 'graphql-request';
 import { authTokenStore } from './auth-token-store';
 
 const GRAPHQL_ENDPOINT =
-  process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT ||
-  (typeof window !== 'undefined' ? '/graphql' : 'http://localhost:4000/graphql');
+  typeof window !== 'undefined'
+    ? `${window.location.origin}/graphql`
+    : (process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT ||
+       (process.env.BACKEND_API_URL ? `${process.env.BACKEND_API_URL}/graphql` : 'http://localhost:4000/graphql'));
 
 export const graphqlClient = new GraphQLClient(GRAPHQL_ENDPOINT, {
   fetch: (url, init) => {
