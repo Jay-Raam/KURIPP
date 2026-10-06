@@ -1,0 +1,134 @@
+scalar DateTime
+scalar JSON
+
+enum UserRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum DocumentProcessingStatus {
+  UPLOADING
+  UPLOADED
+  QUEUED
+  PROCESSING
+  EXTRACTING
+  CHUNKING
+  EMBEDDING
+  INDEXING
+  READY
+  FAILED
+}
+
+enum AIMode {
+  ASK
+  RESEARCH
+  ANALYZE
+}
+
+enum WhatsAppMessageStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+type User {
+  id: ID!
+  email: String!
+  fullName: String!
+  emailVerified: Boolean!
+  avatarUrl: String
+  createdAt: DateTime!
+}
+
+type AuthPayload {
+  accessToken: String!
+  user: User!
+}
+
+type Workspace {
+  id: ID!
+  organizationId: ID!
+  name: String!
+  slug: String!
+  description: String
+  role: UserRole
+  createdAt: DateTime!
+}
+
+type Document {
+  id: ID!
+  workspaceId: ID!
+  title: String!
+  mimeType: String!
+  fileSize: Float!
+  status: DocumentProcessingStatus!
+  currentVersion: Int!
+  errorMessage: String
+  pageCount: Int
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type OpenRouterModel {
+  id: String!
+  name: String!
+  description: String!
+  contextLength: Int!
+  isFree: Boolean!
+}
+
+type WhatsAppLog {
+  id: ID!
+  recipientNumber: String!
+  templateName: String!
+  severity: String!
+  contentSummary: String!
+  status: WhatsAppMessageStatus!
+  errorMessage: String
+  sentAt: DateTime
+  deliveredAt: DateTime
+  readAt: DateTime
+  createdAt: DateTime!
+}
+
+type SystemHealth {
+  status: String!
+  version: String!
+  uptimeSeconds: Float!
+  timestamp: DateTime!
+  postgres: Boolean!
+  mongodb: Boolean!
+  redis: Boolean!
+}
+
+type Query {
+  health: SystemHealth!
+  me: User
+  myWorkspaces: [Workspace!]!
+  openRouterModels: [OpenRouterModel!]!
+  documents(workspaceId: ID!): [Document!]!
+  whatsAppLogs(limit: Int): [WhatsAppLog!]!
+}
+
+type Mutation {
+  healthPing: String!
+  register(input: RegisterInput!): AuthPayload!
+  login(input: LoginInput!): AuthPayload!
+  logout: Boolean!
+  refreshToken: AuthPayload!
+}
+
+input RegisterInput {
+  email: String!
+  password: String!
+  fullName: String!
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}

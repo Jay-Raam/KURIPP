@@ -1,0 +1,191 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum DocumentProcessingStatus {
+  UPLOADING
+  UPLOADED
+  QUEUED
+  PROCESSING
+  EXTRACTING
+  CHUNKING
+  EMBEDDING
+  INDEXING
+  READY
+  FAILED
+}
+
+enum WhatsAppStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+model User {
+  id            String            @id @default(uuid())
+  email         String            @unique
+  passwordHash  String            @map("password_hash")
+  fullName      String            @map("full_name")
+  emailVerified Boolean           @default(false) @map("email_verified")
+  avatarUrl     String?           @map("avatar_url")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+  sessions      Session[]
+  memberships   WorkspaceMember[]
+  auditLogs     AuditLog[]
+
+  @@map("users")
+}
+
+model Session {
+  id               String   @id @default(uuid())
+  userId           String   @map("user_id")
+  refreshTokenHash String   @map("refresh_token_hash")
+  familyId         String   @map("family_id")
+  ipHash           String?  @map("ip_hash")
+  userAgent        String?  @map("user_agent")
+  isRevoked        Boolean  @default(false) @map("is_revoked")
+  expiresAt        DateTime @map("expires_at")
+  createdAt        DateTime @default(now()) @map("created_at")
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([refreshTokenHash])
+  @@index([familyId])
+  @@map("sessions")
+}
+
+model Organization {
+  id         String      @id @default(uuid())
+  name       String
+  slug       String      @unique
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+  workspaces Workspace[]
+
+  @@map("organizations")
+}
+
+model Workspace {
+  id             String            @id @default(uuid())
+  organizationId String            @map("organization_id")
+  name           String
+  slug           String            @unique
+  description    String?
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members        WorkspaceMember[]
+  documents      Document[]
+  chunks         DocumentChunk[]
+  auditLogs      AuditLog[]
+
+  @@index([organizationId])
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String    @id @default(uuid())
+  workspaceId String    @map("workspace_id")
+  userId      String    @map("user_id")
+  role        UserRole  @default(MEMBER)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@map("workspace_members")
+}
+
+model Document {
+  id             String                   @id @default(uuid())
+  workspaceId    String                   @map("workspace_id")
+  folderId       String?                  @map("folder_id")
+  title          String
+  mimeType       String                   @map("mime_type")
+  fileSize       BigInt                   @map("file_size")
+  r2ObjectKey    String                   @map("r2_object_key")
+  status         DocumentProcessingStatus @default(UPLOADING)
+  currentVersion Int                      @default(1) @map("current_version")
+  errorMessage   String?                  @map("error_message")
+  pageCount      Int?                     @map("page_count")
+  createdAt      DateTime                 @default(now()) @map("created_at")
+  updatedAt      DateTime                 @updatedAt @map("updated_at")
+  workspace      Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  chunks         DocumentChunk[]
+
+  @@index([workspaceId, createdAt(sort: Desc)])
+  @@map("documents")
+}
+
+model DocumentChunk {
+  id             BigInt    @id @default(autoincrement())
+  documentId     String    @map("document_id")
+  workspaceId    String    @map("workspace_id")
+  pageNumber     Int?      @map("page_number")
+  sectionHeading String?   @map("section_heading")
+  chunkIndex     Int       @map("chunk_index")
+  content        String
+  tokenCount     Int       @map("token_count")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  document       Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([documentId, chunkIndex])
+  @@index([workspaceId])
+  @@map("document_chunks")
+}
+
+model WhatsAppMessage {
+  id                String         @id @default(uuid())
+  externalMessageId String?        @map("external_message_id")
+  recipientNumber   String         @map("recipient_number")
+  templateName      String         @map("template_name")
+  severity          String         @default("INFO")
+  contentSummary    String         @map("content_summary")
+  status            WhatsAppStatus @default(PENDING)
+  errorMessage      String?        @map("error_message")
+  sentAt            DateTime?      @map("sent_at")
+  deliveredAt       DateTime?      @map("delivered_at")
+  readAt            DateTime?      @map("read_at")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  metadata          Json?
+
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@map("whatsapp_messages")
+}
+
+model AuditLog {
+  id           String    @id @default(uuid())
+  userId       String?   @map("user_id")
+  workspaceId  String?   @map("workspace_id")
+  action       String
+  resourceType String    @map("resource_type")
+  resourceId   String?   @map("resource_id")
+  ipHash       String?   @map("ip_hash")
+  userAgent    String?   @map("user_agent")
+  metadata     Json?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  user         User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  workspace    Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt(sort: Desc)])
+  @@index([userId])
+  @@map("audit_logs")
+}
