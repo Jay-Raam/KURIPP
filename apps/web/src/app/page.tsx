@@ -8,6 +8,7 @@ import { useTheme } from '@/components/providers';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { WorkspaceSwitcher } from '@/components/workspace-switcher';
+import { CommandPaletteTrigger } from '@/components/command-palette';
 import {
   FileText,
   Search,
@@ -90,6 +91,8 @@ export default function HomePage() {
           </div>
 
           <div className="flex items-center space-x-3">
+            <CommandPaletteTrigger />
+
             <div className="hidden sm:flex items-center space-x-2 border border-border rounded px-2.5 py-1 text-xs text-muted-foreground font-mono">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>GraphQL: /graphql</span>

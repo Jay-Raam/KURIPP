@@ -1,8 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useWorkspace } from '@/lib/workspace-context';
 import { useAuth } from '@/lib/auth-context';
+import { WorkspaceSwitcher } from '@/components/workspace-switcher';
+import { CommandPaletteTrigger } from '@/components/command-palette';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { gql } from 'graphql-request';
 import { graphqlClient } from '@/lib/graphql-client';
@@ -201,8 +204,53 @@ export default function WorkspaceManagementPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground py-10 px-6">
-      <div className="mx-auto max-w-5xl space-y-8">
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Top Header */}
+      <header className="border-b border-border bg-background/80 backdrop-blur-md sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center font-mono font-bold text-xs text-foreground">
+              KW
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs uppercase tracking-widest text-muted-foreground font-mono">SETTINGS</span>
+              <span className="text-muted-foreground">/</span>
+              <span className="text-sm font-semibold text-foreground">{currentWorkspace.name}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            <CommandPaletteTrigger />
+            <WorkspaceSwitcher />
+            <Link
+              href="/"
+              className="px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary border border-border transition-colors"
+            >
+              Home
+            </Link>
+            <Link
+              href="/chat"
+              className="px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary border border-border transition-colors"
+            >
+              Research Chat
+            </Link>
+            <Link
+              href="/research"
+              className="px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary border border-border transition-colors"
+            >
+              Research Studio
+            </Link>
+            <Link
+              href="/documents"
+              className="px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary border border-border transition-colors"
+            >
+              Document Vault
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <div className="mx-auto max-w-5xl space-y-8 py-10 px-6">
         {/* Workspace Title & Badge */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-border gap-4">
           <div className="space-y-1">

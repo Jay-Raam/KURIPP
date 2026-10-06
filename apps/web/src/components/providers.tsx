@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { AuthProvider } from '@/lib/auth-context';
 import { WorkspaceProvider } from '@/lib/workspace-context';
+import { CommandPaletteProvider } from '@/components/command-palette';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -74,18 +75,20 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <WorkspaceProvider>
-            {children}
-            <Toaster
-              position="bottom-right"
-              theme={theme === 'light' ? 'light' : 'dark'}
-              toastOptions={{
-                style: {
-                  background: 'hsl(var(--card))',
-                  color: 'hsl(var(--foreground))',
-                  border: '1px solid hsl(var(--border))',
-                },
-              }}
-            />
+            <CommandPaletteProvider>
+              {children}
+              <Toaster
+                position="bottom-right"
+                theme={theme === 'light' ? 'light' : 'dark'}
+                toastOptions={{
+                  style: {
+                    background: 'hsl(var(--card))',
+                    color: 'hsl(var(--foreground))',
+                    border: '1px solid hsl(var(--border))',
+                  },
+                }}
+              />
+            </CommandPaletteProvider>
           </WorkspaceProvider>
         </AuthProvider>
       </QueryClientProvider>

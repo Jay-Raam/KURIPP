@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useWorkspace } from '@/lib/workspace-context';
 import { WorkspaceSwitcher } from '@/components/workspace-switcher';
+import { CommandPaletteTrigger } from '@/components/command-palette';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { gql } from 'graphql-request';
 import { graphqlClient } from '@/lib/graphql-client';
@@ -365,6 +366,7 @@ export default function ConversationalWorkspacePage() {
         </div>
 
         <div className="flex items-center gap-2.5">
+          <CommandPaletteTrigger />
           <WorkspaceSwitcher />
           <Link
             href="/"

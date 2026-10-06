@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { ShieldCheck, Loader2 } from 'lucide-react';
+import { ShieldCheck, Loader2, Sparkles, UserCheck } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,6 +30,26 @@ export default function LoginPage() {
     }
   };
 
+  const handleFillDemo = (autoSubmit: boolean) => {
+    setEmail('recruiter@kuripp.demo');
+    setPassword('KurippDemo2026!');
+    setErrorMsg(null);
+
+    if (autoSubmit) {
+      setIsSubmitting(true);
+      login({ email: 'recruiter@kuripp.demo', password: 'KurippDemo2026!' })
+        .then(() => {
+          router.push('/');
+        })
+        .catch((err: any) => {
+          setErrorMsg(err.message || 'Demo account login failed. Please ensure DB is seeded.');
+        })
+        .finally(() => {
+          setIsSubmitting(false);
+        });
+    }
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 text-foreground">
       <div className="w-full max-w-sm space-y-6">
@@ -41,6 +61,37 @@ export default function LoginPage() {
           <p className="text-xs text-muted-foreground">
             Access your research workspace and document collections
           </p>
+        </div>
+
+        {/* Recruiter Evaluation Quick-Fill Banner */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-zinc-300" />
+            <span className="text-xs font-semibold text-zinc-200">
+              Recruiter Demo Evaluation Mode
+            </span>
+          </div>
+          <p className="text-[11px] text-zinc-400 font-mono leading-relaxed">
+            Pre-seeded with Enterprise SaaS workspace, SOC 2/DPA documents, 1536-dim vector embeddings, and benchmark evaluations.
+          </p>
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => handleFillDemo(true)}
+              disabled={isSubmitting}
+              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-950 font-semibold text-xs font-mono transition-colors disabled:opacity-60"
+            >
+              <UserCheck className="w-3.5 h-3.5" />
+              1-Click Demo Sign In
+            </button>
+            <button
+              type="button"
+              onClick={() => handleFillDemo(false)}
+              className="py-1.5 px-2.5 rounded-lg border border-zinc-700 bg-zinc-800 hover:bg-zinc-750 text-zinc-300 text-xs font-mono transition-colors"
+            >
+              Auto-Fill
+            </button>
+          </div>
         </div>
 
         {errorMsg && (
