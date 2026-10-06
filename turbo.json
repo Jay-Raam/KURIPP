@@ -1,8 +1,19 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "BACKEND_API_URL",
+    "BACKEND_INTERNAL_URL",
+    "NEXT_PUBLIC_GRAPHQL_ENDPOINT",
+    "NODE_ENV"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "env": [
+        "BACKEND_API_URL",
+        "BACKEND_INTERNAL_URL",
+        "NEXT_PUBLIC_GRAPHQL_ENDPOINT"
+      ],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "dev": {
