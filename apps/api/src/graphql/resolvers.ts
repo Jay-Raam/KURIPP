@@ -9,6 +9,13 @@ import { DocumentService } from '../documents/service';
 import { IngestionService } from '../documents/ingestion';
 import { HybridSearchService } from '../search/hybrid';
 import { ChatService } from '../chat/service';
+import { CollectionsService } from '../collections/service';
+import { ResearchNotesService } from '../notes/service';
+import { DeepResearchEngine } from '../research/engine';
+import { DocumentComparisonEngine } from '../tools/diff';
+import { AiToolRunner } from '../tools/runner';
+import { ReportsService } from '../reports/service';
+import { AiEvaluationHarness } from '../evaluation/harness';
 import type { UserRole } from '@kuripp/shared-types';
 import {
   REFRESH_COOKIE_NAME,
@@ -159,6 +166,100 @@ export const resolvers = {
         take: args.limit || 50,
         orderBy: { createdAt: 'desc' },
       });
+    },
+
+    // Phase 8: Collections & Notes
+    collections: async (
+      _: unknown,
+      args: { workspaceId: string },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return CollectionsService.listCollections(ctx.userId, args.workspaceId);
+    },
+
+    collection: async (
+      _: unknown,
+      args: { id: string },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return CollectionsService.getCollection(ctx.userId, args.id);
+    },
+
+    collectionDocuments: async (
+      _: unknown,
+      args: { collectionId: string },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return CollectionsService.getCollectionDocuments(ctx.userId, args.collectionId);
+    },
+
+    researchNotes: async (
+      _: unknown,
+      args: { workspaceId: string; collectionId?: string | null; tag?: string },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return ResearchNotesService.listNotes(ctx.userId, args.workspaceId, {
+        collectionId: args.collectionId,
+        tag: args.tag,
+      });
+    },
+
+    researchNote: async (
+      _: unknown,
+      args: { id: string },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return ResearchNotesService.getNote(ctx.userId, args.id);
+    },
+
+    // Phase 9: Document Diffs, Reports & Evaluation
+    documentComparisons: async (
+      _: unknown,
+      args: { workspaceId: string },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return DocumentComparisonEngine.listComparisons(ctx.userId, args.workspaceId);
+    },
+
+    documentComparison: async (
+      _: unknown,
+      args: { id: string },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return DocumentComparisonEngine.getComparison(ctx.userId, args.id);
+    },
+
+    generatedReports: async (
+      _: unknown,
+      args: { workspaceId: string },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return ReportsService.listReports(ctx.userId, args.workspaceId);
+    },
+
+    generatedReport: async (
+      _: unknown,
+      args: { id: string },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return ReportsService.getReport(ctx.userId, args.id);
+    },
+
+    runAiEvaluationHarness: async (
+      _: unknown,
+      args: { workspaceId: string },
+      ctx: GraphQLContext
+    ) => {
+      return AiEvaluationHarness.evaluateWorkspace(args.workspaceId, ctx.userId || 'system-evaluator');
     },
   },
 
@@ -483,6 +584,125 @@ export const resolvers = {
     ) => {
       if (!ctx.userId) throw new Error('Unauthorized');
       return ChatService.deleteSession(ctx.userId, args.id);
+    },
+
+    // Phase 8: Collections & Notes Mutations
+    createCollection: async (
+      _: unknown,
+      args: { input: any },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return CollectionsService.createCollection(ctx.userId, args.input);
+    },
+
+    updateCollection: async (
+      _: unknown,
+      args: { id: string; input: any },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return CollectionsService.updateCollection(ctx.userId, args.id, args.input);
+    },
+
+    deleteCollection: async (
+      _: unknown,
+      args: { id: string },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return CollectionsService.deleteCollection(ctx.userId, args.id);
+    },
+
+    addDocumentToCollection: async (
+      _: unknown,
+      args: { input: { collectionId: string; documentId: string } },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return CollectionsService.addDocument(ctx.userId, args.input.collectionId, args.input.documentId);
+    },
+
+    removeDocumentFromCollection: async (
+      _: unknown,
+      args: { input: { collectionId: string; documentId: string } },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return CollectionsService.removeDocument(ctx.userId, args.input.collectionId, args.input.documentId);
+    },
+
+    createResearchNote: async (
+      _: unknown,
+      args: { input: any },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return ResearchNotesService.createNote(ctx.userId, args.input);
+    },
+
+    updateResearchNote: async (
+      _: unknown,
+      args: { id: string; input: any },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return ResearchNotesService.updateNote(ctx.userId, args.id, args.input);
+    },
+
+    deleteResearchNote: async (
+      _: unknown,
+      args: { id: string },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return ResearchNotesService.deleteNote(ctx.userId, args.id);
+    },
+
+    runDeepResearch: async (
+      _: unknown,
+      args: { input: any },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return DeepResearchEngine.runDeepResearch(ctx.userId, args.input);
+    },
+
+    // Phase 9: Document Diff, AI Tools & Reports Mutations
+    compareDocuments: async (
+      _: unknown,
+      args: { input: any },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return DocumentComparisonEngine.compareDocuments(ctx.userId, args.input);
+    },
+
+    executeAiTool: async (
+      _: unknown,
+      args: { input: any },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return AiToolRunner.execute(ctx.userId, args.input);
+    },
+
+    generateReport: async (
+      _: unknown,
+      args: { input: any },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return ReportsService.generateReport(ctx.userId, args.input);
+    },
+
+    deleteReport: async (
+      _: unknown,
+      args: { id: string },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return ReportsService.deleteReport(ctx.userId, args.id);
     },
   },
 

@@ -219,6 +219,20 @@ type Query {
   chatSessions(workspaceId: ID!): [ChatSession!]!
   chatSession(id: ID!): ChatSessionDetail
   whatsAppLogs(limit: Int): [WhatsAppLog!]!
+
+  # Phase 8: Collections & Research Notes
+  collections(workspaceId: ID!): [Collection!]!
+  collection(id: ID!): Collection
+  collectionDocuments(collectionId: ID!): [Document!]!
+  researchNotes(workspaceId: ID!, collectionId: ID, tag: String): [ResearchNote!]!
+  researchNote(id: ID!): ResearchNote
+
+  # Phase 9: Document Diffs, Reports & Evaluation
+  documentComparisons(workspaceId: ID!): [DocumentDiffResult!]!
+  documentComparison(id: ID!): DocumentDiffResult
+  generatedReports(workspaceId: ID!): [GeneratedReportPayload!]!
+  generatedReport(id: ID!): GeneratedReportPayload
+  runAiEvaluationHarness(workspaceId: ID!): EvaluationSummary!
 }
 
 type Mutation {
@@ -247,6 +261,25 @@ type Mutation {
   createChatSession(input: CreateChatSessionInput!): ChatSession!
   sendMessage(input: SendMessageInput!): ChatMessage!
   deleteChatSession(id: ID!): Boolean!
+
+  # Phase 8 Mutations: Collections & Notes & Deep Research
+  createCollection(input: CreateCollectionInput!): Collection!
+  updateCollection(id: ID!, input: UpdateCollectionInput!): Collection!
+  deleteCollection(id: ID!): Boolean!
+  addDocumentToCollection(input: AddDocumentToCollectionInput!): Boolean!
+  removeDocumentFromCollection(input: RemoveDocumentFromCollectionInput!): Boolean!
+
+  createResearchNote(input: CreateResearchNoteInput!): ResearchNote!
+  updateResearchNote(id: ID!, input: UpdateResearchNoteInput!): ResearchNote!
+  deleteResearchNote(id: ID!): Boolean!
+
+  runDeepResearch(input: RunDeepResearchInput!): DeepResearchSynthesis!
+
+  # Phase 9 Mutations: Document Diff, AI Tools & Reports
+  compareDocuments(input: CompareDocumentsInput!): DocumentDiffResult!
+  executeAiTool(input: ExecuteAiToolInput!): ToolExecutionResult!
+  generateReport(input: CreateReportInput!): GeneratedReportPayload!
+  deleteReport(id: ID!): Boolean!
 }
 
 input CreateDocumentUploadInput {
@@ -324,6 +357,170 @@ input SendMessageInput {
   content: String!
   mode: AIMode
   model: String
+}
+
+# Phase 8: Collections & Research Notes Types
+type Collection {
+  id: ID!
+  workspaceId: ID!
+  name: String!
+  description: String
+  color: String
+  documentCount: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type ResearchNote {
+  id: ID!
+  workspaceId: ID!
+  userId: ID!
+  collectionId: ID
+  title: String!
+  content: String!
+  tags: [String!]!
+  sourceCitations: JSON
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type DeepResearchSynthesis {
+  id: ID!
+  objective: String!
+  subQueries: [String!]!
+  documentsAnalyzed: Int!
+  citations: [SearchCitation!]!
+  synthesisMarkdown: String!
+  keyFindings: [String!]!
+  strategicRecommendations: [String!]!
+  executionTimeMs: Int!
+}
+
+# Phase 9: Document Diff, AI Tools, Reports & Evaluation Types
+type DiffSegment {
+  type: String!
+  text: String!
+  lineNumber: Int
+}
+
+type DocumentDiffResult {
+  id: ID!
+  workspaceId: ID!
+  baseDocumentId: ID!
+  targetDocumentId: ID!
+  title: String!
+  summary: String!
+  addedClausesCount: Int!
+  removedClausesCount: Int!
+  modifiedClausesCount: Int!
+  segments: [DiffSegment!]!
+  aiAnalysis: String!
+  createdAt: DateTime!
+}
+
+type ToolExecutionResult {
+  toolName: String!
+  inputPayload: JSON!
+  outputPayload: JSON!
+  status: String!
+  durationMs: Int!
+}
+
+type GeneratedReportPayload {
+  id: ID!
+  workspaceId: ID!
+  title: String!
+  format: String!
+  content: String!
+  metadata: JSON
+  createdAt: DateTime!
+}
+
+type EvaluationMetric {
+  testCaseId: String!
+  query: String!
+  groundednessScore: Float!
+  citationPrecision: Float!
+  hallucinationScore: Float!
+  isPassed: Boolean!
+  explanation: String!
+}
+
+type EvaluationSummary {
+  totalCases: Int!
+  passedCases: Int!
+  averageGroundedness: Float!
+  averageCitationPrecision: Float!
+  averageHallucinationScore: Float!
+  metrics: [EvaluationMetric!]!
+}
+
+# Inputs for Phase 8 & 9
+input CreateCollectionInput {
+  workspaceId: ID!
+  name: String!
+  description: String
+  color: String
+}
+
+input UpdateCollectionInput {
+  name: String
+  description: String
+  color: String
+}
+
+input AddDocumentToCollectionInput {
+  collectionId: ID!
+  documentId: ID!
+}
+
+input RemoveDocumentFromCollectionInput {
+  collectionId: ID!
+  documentId: ID!
+}
+
+input CreateResearchNoteInput {
+  workspaceId: ID!
+  collectionId: ID
+  title: String!
+  content: String!
+  tags: [String!]
+  sourceCitations: JSON
+}
+
+input UpdateResearchNoteInput {
+  title: String
+  content: String
+  tags: [String!]
+  collectionId: ID
+}
+
+input RunDeepResearchInput {
+  workspaceId: ID!
+  collectionId: ID
+  objective: String!
+  model: String
+  depth: String
+}
+
+input CompareDocumentsInput {
+  workspaceId: ID!
+  baseDocumentId: ID!
+  targetDocumentId: ID!
+  title: String
+}
+
+input ExecuteAiToolInput {
+  workspaceId: ID!
+  toolName: String!
+  parameters: JSON!
+}
+
+input CreateReportInput {
+  workspaceId: ID!
+  title: String!
+  format: String
+  prompt: String
 }
 
 

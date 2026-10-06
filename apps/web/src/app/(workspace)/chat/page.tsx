@@ -379,6 +379,12 @@ export default function ConversationalWorkspacePage() {
             Document Vault
           </Link>
           <Link
+            href="/research"
+            className="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 border border-zinc-800 transition-colors"
+          >
+            Research Studio
+          </Link>
+          <Link
             href="/workspaces"
             className="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 border border-zinc-800 transition-colors"
           >
