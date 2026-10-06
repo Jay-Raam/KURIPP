@@ -1,0 +1,32 @@
+name: Feature Request
+description: Propose a new feature, model provider, or architectural capability
+title: "[Feature]: "
+labels: ["enhancement", "proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for submitting a proposal for KURIPP!
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: Is your feature request related to a specific problem or workflow?
+      placeholder: I am frustrated when conducting multi-document research because...
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution & Architectural Design
+      description: Describe your proposed solution adhering to our strict GraphQL-only and zero-storage security constraints.
+      placeholder: Implement an asynchronous background job / GraphQL subscription...
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative implementations or existing libraries considered?
+    validations:
+      required: false

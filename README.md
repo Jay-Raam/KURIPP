@@ -135,11 +135,14 @@ kuripp/
 - Docker & Docker Compose
 - Python >= 3.11 (managed via `uv`)
 
-### 1. Clone & Install
+### 1. Clone & Audit Environment
 ```bash
 git clone https://github.com/Jay-Raam/KURIPP.git
 cd KURIPP
 pnpm install
+
+# Run the system doctor to audit local dependencies and runtimes
+pnpm doctor
 ```
 
 ### 2. Configure Environment
@@ -157,7 +160,7 @@ WHATSAPP_API_KEY=your_evolution_api_key
 
 ### 3. Start Infrastructure & Run Seeds
 ```bash
-# Start PostgreSQL, MongoDB, Redis, Mailpit
+# Start PostgreSQL (pgvector), MongoDB, Redis, Mailpit
 docker compose up -d
 
 # Generate Prisma Client & Run Seeder
@@ -168,13 +171,18 @@ pnpm --filter @kuripp/api db:seed
 Demo Credentials seeded:
 - **Email**: `recruiter@kuripp.demo`
 - **Password**: `KurippDemo2026!`
+*(Also available via 1-Click Demo Sign In button on `/login`)*
 
-### 4. Run Development Services
+### 4. Run Development Services & Smoke Tests
 ```bash
+# Start all microservices in parallel
 pnpm dev
+
+# Execute automated architectural smoke test suite
+pnpm smoke
 ```
-- **Web App**: `http://localhost:3000`
-- **GraphQL Yoga API**: `http://localhost:4000/graphql`
+- **Web App**: `http://localhost:3000` *(Press `Cmd+K` / `Ctrl+K` for global command palette)*
+- **GraphQL Yoga API**: `http://localhost:4000/graphql` *(GraphiQL playground enabled)*
 - **Mailpit Web UI**: `http://localhost:8025`
 
 ---
@@ -183,12 +191,20 @@ pnpm dev
 
 | Suite | Runner | Test Count | Status |
 | :--- | :--- | :--- | :--- |
+| **Monorepo System Doctor** | Node.js ESM | **5 / 5 Audits Clean** | ✅ Green |
+| **Architectural Smoke Tests** | Node.js ESM | **7 / 7 Invariants Passing** | ✅ Green |
 | **API Test Suite** | Vitest | **44 / 44 Passing** | ✅ Green |
 | **Web Security Storage** | Vitest | **2 / 2 Passing** | ✅ Green |
-| **Python Ingestion & Embeddings** | Pytest | **7 / 7 Passing** | ✅ Green |
+| **Python Ingestion & Embeddings** | Pytest (`uv`) | **7 / 7 Passing** | ✅ Green |
 | **Next.js Production Build** | Next.js 15 | **11 / 11 Routes Static** | ✅ Compiled |
 
 ---
 
-## 6. License
+## 6. Contributing & Community
+
+Please read our [Contributing Guidelines](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) before submitting pull requests.
+
+---
+
+## 7. License
 MIT License. Built by Jay Raam as a flagship AI Full Stack portfolio application.

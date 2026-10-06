@@ -1,0 +1,26 @@
+version: 2
+updates:
+  # Monorepo NPM packages (pnpm)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore(deps)"
+
+  # GitHub Actions CI Workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    commit-message:
+      prefix: "ci(actions)"
+
+  # Python Layout Chunking Service (services/ai)
+  - package-ecosystem: "pip"
+    directory: "/services/ai"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(python-deps)"

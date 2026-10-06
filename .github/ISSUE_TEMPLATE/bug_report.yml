@@ -1,0 +1,53 @@
+name: Bug Report
+description: File a bug report or regression in KURIPP
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing an issue! Please verify you have run `pnpm doctor` and checked our [threat model](docs/security/threat-model.md).
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of the bug.
+      placeholder: Describe the defect, GraphQL error, or unexpected behavior...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Step-by-step reproduction sequence.
+      placeholder: |
+        1. Navigate to '/chat' or '/research'
+        2. Execute query '...'
+        3. Observe error response...
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Impacted Architecture Component
+      options:
+        - "GraphQL Yoga API Gateway (/graphql)"
+        - "PostgreSQL 17 / pgvector Hybrid Retrieval"
+        - "Document Vault & Python Layout Chunking"
+        - "Deep Research Studio & Citations"
+        - "Proactive WhatsApp / Evolution API Alerts"
+        - "Obsidian Dark Web Client"
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment & Runtime Details
+      description: Run `pnpm doctor` and paste the output here.
+      render: shell
+      placeholder: |
+        Node.js: v20+
+        pnpm: v9+
+        Docker: Postgres 17 pgvector / Redis 7 / Mongo 8
+    validations:
+      required: false
