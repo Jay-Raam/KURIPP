@@ -30,7 +30,7 @@
     "express": "^4.21.2",
     "graphql": "^16.10.0",
     "graphql-yoga": "^5.13.1",
-    "ioredis": "^5.6.0",
+    "ioredis": "^6.0.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.12.1",
     "nodemailer": "^6.10.0",
