@@ -134,6 +134,18 @@ type AuditLogRecord {
   createdAt: DateTime!
 }
 
+type DocumentUploadPayload {
+  documentId: ID!
+  uploadUrl: String!
+  objectKey: String!
+  expiresInSeconds: Int!
+}
+
+type DocumentDownloadPayload {
+  downloadUrl: String!
+  expiresInSeconds: Int!
+}
+
 type Query {
   health: SystemHealth!
   me: User
@@ -144,6 +156,8 @@ type Query {
   auditLogs(workspaceId: ID!, limit: Int): [AuditLogRecord!]!
   openRouterModels: [OpenRouterModel!]!
   documents(workspaceId: ID!): [Document!]!
+  document(id: ID!): Document
+  documentDownloadUrl(id: ID!): DocumentDownloadPayload!
   whatsAppLogs(limit: Int): [WhatsAppLog!]!
 }
 
@@ -164,6 +178,23 @@ type Mutation {
   inviteWorkspaceMember(input: InviteMemberInput!): WorkspaceMemberInfo!
   updateMemberRole(input: UpdateMemberRoleInput!): WorkspaceMemberInfo!
   removeWorkspaceMember(workspaceId: ID!, memberId: ID!): Boolean!
+
+  createDocumentUpload(input: CreateDocumentUploadInput!): DocumentUploadPayload!
+  confirmDocumentUpload(input: ConfirmDocumentUploadInput!): Document!
+  deleteDocument(id: ID!): Boolean!
+}
+
+input CreateDocumentUploadInput {
+  workspaceId: ID!
+  title: String!
+  fileName: String!
+  fileSize: Float!
+  mimeType: String!
+}
+
+input ConfirmDocumentUploadInput {
+  documentId: ID!
+  checksum: String
 }
 
 input CreateWorkspaceInput {

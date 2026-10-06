@@ -107,10 +107,16 @@ export default function HomePage() {
               <div className="flex items-center space-x-2">
                 <WorkspaceSwitcher />
                 <Link
+                  href="/documents"
+                  className="hidden md:inline-flex h-8 items-center justify-center rounded border border-border bg-card px-2.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+                >
+                  Document Vault
+                </Link>
+                <Link
                   href="/workspaces"
                   className="hidden md:inline-flex h-8 items-center justify-center rounded border border-border bg-card px-2.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
                 >
-                  Workspace Settings
+                  Workspaces
                 </Link>
                 <button
                   onClick={() => logout()}
@@ -300,6 +306,14 @@ export default function HomePage() {
                   Async pipeline supporting PDF, DOCX, XLSX, PPTX, CSV, and Markdown. Preserves
                   page bounds, headings, and tables.
                 </p>
+                <div className="pt-2">
+                  <Link
+                    href="/documents"
+                    className="inline-flex items-center text-xs text-foreground font-mono hover:underline"
+                  >
+                    Open Document Vault →
+                  </Link>
+                </div>
               </div>
 
               <div className="space-y-2">

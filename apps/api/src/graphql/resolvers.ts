@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import type { GraphQLDataLoaders } from '../lib/dataloaders';
 import { AuthService } from '../auth/service';
 import { WorkspaceService } from '../workspaces/service';
+import { DocumentService } from '../documents/service';
 import type { UserRole } from '@kuripp/shared-types';
 import {
   REFRESH_COOKIE_NAME,
@@ -100,15 +101,22 @@ export const resolvers = {
       return WorkspaceService.getAuditLogs(ctx.userId, args.workspaceId, args.limit);
     },
 
-    documents: async (_: unknown, args: { workspaceId: string }) => {
-      const docs = await prisma.document.findMany({
-        where: { workspaceId: args.workspaceId },
-        orderBy: { createdAt: 'desc' },
+    documents: async (_: unknown, args: { workspaceId: string }, ctx: GraphQLContext) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return DocumentService.listDocuments(ctx.userId, args.workspaceId);
+    },
+
+    document: async (_: unknown, args: { id: string }, ctx: GraphQLContext) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return DocumentService.getDocument(ctx.userId, args.id);
+    },
+
+    documentDownloadUrl: async (_: unknown, args: { id: string }, ctx: GraphQLContext) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return DocumentService.getDownloadUrl(ctx.userId, args.id, {
+        ipHash: ctx.req?.ip,
+        userAgent: ctx.req?.get('user-agent'),
       });
-      return docs.map((d) => ({
-        ...d,
-        fileSize: Number(d.fileSize),
-      }));
     },
 
     whatsAppLogs: async (_: unknown, args: { limit?: number }) => {
@@ -334,6 +342,55 @@ export const resolvers = {
     ) => {
       if (!ctx.userId) throw new Error('Unauthorized');
       return WorkspaceService.removeMember(ctx.userId, args.workspaceId, args.memberId, {
+        ipHash: ctx.req?.ip,
+        userAgent: ctx.req?.get('user-agent'),
+      });
+    },
+
+    createDocumentUpload: async (
+      _: unknown,
+      args: {
+        input: {
+          workspaceId: string;
+          title: string;
+          fileName: string;
+          fileSize: number;
+          mimeType: string;
+        };
+      },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return DocumentService.createUpload(ctx.userId, args.input, {
+        ipHash: ctx.req?.ip,
+        userAgent: ctx.req?.get('user-agent'),
+      });
+    },
+
+    confirmDocumentUpload: async (
+      _: unknown,
+      args: {
+        input: {
+          documentId: string;
+          checksum?: string | null;
+        };
+      },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return DocumentService.confirmUpload(ctx.userId, args.input, {
+        ipHash: ctx.req?.ip,
+        userAgent: ctx.req?.get('user-agent'),
+      });
+    },
+
+    deleteDocument: async (
+      _: unknown,
+      args: { id: string },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return DocumentService.deleteDocument(ctx.userId, args.id, {
         ipHash: ctx.req?.ip,
         userAgent: ctx.req?.get('user-agent'),
       });

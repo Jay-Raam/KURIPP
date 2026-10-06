@@ -39,5 +39,6 @@ describe('Zero Sensitive Browser Storage Policy', () => {
 
     // Non-sensitive preferences should be permitted
     expect(nonSensitivePrefKey).not.toMatch(/token|jwt|auth|secret|key|password/i);
+    expect(nonSensitivePrefValue).toBe('dark');
   });
 });
