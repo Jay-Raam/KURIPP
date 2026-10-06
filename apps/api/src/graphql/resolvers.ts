@@ -4,6 +4,8 @@ import { redis } from '../lib/redis';
 import mongoose from 'mongoose';
 import type { GraphQLDataLoaders } from '../lib/dataloaders';
 import { AuthService } from '../auth/service';
+import { WorkspaceService } from '../workspaces/service';
+import type { UserRole } from '@kuripp/shared-types';
 import {
   REFRESH_COOKIE_NAME,
   REFRESH_COOKIE_OPTIONS,
@@ -81,6 +83,21 @@ export const resolvers = {
         ...m.workspace,
         role: m.role,
       }));
+    },
+
+    workspace: async (_: unknown, args: { id: string }, ctx: GraphQLContext) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return WorkspaceService.getWorkspace(ctx.userId, args.id);
+    },
+
+    workspaceMembers: async (_: unknown, args: { workspaceId: string }, ctx: GraphQLContext) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return WorkspaceService.getMembers(ctx.userId, args.workspaceId);
+    },
+
+    auditLogs: async (_: unknown, args: { workspaceId: string; limit?: number }, ctx: GraphQLContext) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return WorkspaceService.getAuditLogs(ctx.userId, args.workspaceId, args.limit);
     },
 
     documents: async (_: unknown, args: { workspaceId: string }) => {
@@ -248,6 +265,78 @@ export const resolvers = {
         throw new Error('Unauthorized.');
       }
       return AuthService.revokeSession(ctx.userId, args.sessionId);
+    },
+
+    createWorkspace: async (
+      _: unknown,
+      args: { input: { name: string; slug?: string; description?: string } },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return WorkspaceService.createWorkspace(ctx.userId, args.input, {
+        ipHash: ctx.req?.ip,
+        userAgent: ctx.req?.get('user-agent'),
+      });
+    },
+
+    updateWorkspace: async (
+      _: unknown,
+      args: { id: string; input: { name?: string; description?: string } },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return WorkspaceService.updateWorkspace(ctx.userId, args.id, args.input, {
+        ipHash: ctx.req?.ip,
+        userAgent: ctx.req?.get('user-agent'),
+      });
+    },
+
+    deleteWorkspace: async (
+      _: unknown,
+      args: { id: string },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return WorkspaceService.deleteWorkspace(ctx.userId, args.id, {
+        ipHash: ctx.req?.ip,
+        userAgent: ctx.req?.get('user-agent'),
+      });
+    },
+
+    inviteWorkspaceMember: async (
+      _: unknown,
+      args: { input: { workspaceId: string; email: string; role: UserRole } },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return WorkspaceService.inviteMember(ctx.userId, args.input, {
+        ipHash: ctx.req?.ip,
+        userAgent: ctx.req?.get('user-agent'),
+      });
+    },
+
+    updateMemberRole: async (
+      _: unknown,
+      args: { input: { workspaceId: string; memberId: string; role: UserRole } },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return WorkspaceService.updateMemberRole(ctx.userId, args.input, {
+        ipHash: ctx.req?.ip,
+        userAgent: ctx.req?.get('user-agent'),
+      });
+    },
+
+    removeWorkspaceMember: async (
+      _: unknown,
+      args: { workspaceId: string; memberId: string },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return WorkspaceService.removeMember(ctx.userId, args.workspaceId, args.memberId, {
+        ipHash: ctx.req?.ip,
+        userAgent: ctx.req?.get('user-agent'),
+      });
     },
   },
 };

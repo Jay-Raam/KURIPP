@@ -7,6 +7,7 @@ import { graphqlClient } from '@/lib/graphql-client';
 import { useTheme } from '@/components/providers';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
+import { WorkspaceSwitcher } from '@/components/workspace-switcher';
 import {
   FileText,
   Search,
@@ -63,7 +64,7 @@ interface HealthData {
 
 export default function HomePage() {
   const { theme, setTheme } = useTheme();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
 
   const { data, isLoading } = useQuery<HealthData>({
     queryKey: ['system-health-and-models'],
@@ -104,9 +105,13 @@ export default function HomePage() {
 
             {isAuthenticated ? (
               <div className="flex items-center space-x-2">
-                <span className="hidden md:inline text-xs text-muted-foreground font-mono">
-                  {user?.email}
-                </span>
+                <WorkspaceSwitcher />
+                <Link
+                  href="/workspaces"
+                  className="hidden md:inline-flex h-8 items-center justify-center rounded border border-border bg-card px-2.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+                >
+                  Workspace Settings
+                </Link>
                 <button
                   onClick={() => logout()}
                   className="inline-flex h-8 items-center justify-center rounded border border-border bg-card px-2.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
