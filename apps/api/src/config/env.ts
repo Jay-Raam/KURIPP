@@ -26,6 +26,7 @@ const envSchema = z.object({
   ALERT_WHATSAPP_NUMBER: z.string().default(''),
   WHATSAPP_API_URL: z.string().default('http://localhost:8080'),
   WHATSAPP_API_KEY: z.string().default(''),
+  WHATSAPP_INSTANCE_NAME: z.string().default('kuripp-alerts'),
 
   S3_ENDPOINT: z.string().optional().default(''),
   S3_ACCESS_KEY_ID: z.string().default('minioadmin'),

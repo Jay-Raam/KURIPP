@@ -12,7 +12,8 @@
     "test": "vitest run",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:push": "prisma db push"
+    "db:push": "prisma db push",
+    "db:seed": "tsx src/scripts/seed.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1146.0",
