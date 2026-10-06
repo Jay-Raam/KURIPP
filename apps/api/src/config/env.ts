@@ -25,6 +25,13 @@ const envSchema = z.object({
   WHATSAPP_API_URL: z.string().default('http://localhost:8080'),
   WHATSAPP_API_KEY: z.string().default(''),
 
+  S3_ENDPOINT: z.string().optional().default(''),
+  S3_ACCESS_KEY_ID: z.string().default('minioadmin'),
+  S3_SECRET_ACCESS_KEY: z.string().default('minioadmin'),
+  S3_BUCKET: z.string().default('kuripp-documents'),
+  S3_REGION: z.string().default('auto'),
+  S3_FORCE_PATH_STYLE: z.coerce.boolean().default(true),
+
   EMAIL_HOST: z.string().default('localhost'),
   EMAIL_PORT: z.coerce.number().default(1025),
   EMAIL_SECURE: z.coerce.boolean().default(false),
