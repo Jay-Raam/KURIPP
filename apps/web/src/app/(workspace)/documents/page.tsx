@@ -22,6 +22,11 @@ import {
   FileImage,
   File,
   Layers,
+  Cpu,
+  Eye,
+  X,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -37,6 +42,7 @@ const GET_DOCUMENTS_QUERY = gql`
       currentVersion
       errorMessage
       pageCount
+      chunkCount
       createdAt
       updatedAt
     }
@@ -64,6 +70,18 @@ const CONFIRM_UPLOAD_MUTATION = gql`
   }
 `;
 
+const PROCESS_DOCUMENT_MUTATION = gql`
+  mutation ProcessDocument($id: ID!) {
+    processDocument(id: $id) {
+      id
+      status
+      pageCount
+      chunkCount
+      errorMessage
+    }
+  }
+`;
+
 const DELETE_DOCUMENT_MUTATION = gql`
   mutation DeleteDocument($id: ID!) {
     deleteDocument(id: $id)
@@ -79,6 +97,22 @@ const GET_DOWNLOAD_URL_QUERY = gql`
   }
 `;
 
+const GET_DOCUMENT_CHUNKS_QUERY = gql`
+  query GetDocumentChunks($documentId: ID!) {
+    documentChunks(documentId: $documentId) {
+      id
+      documentId
+      workspaceId
+      pageNumber
+      sectionHeading
+      chunkIndex
+      content
+      tokenCount
+      createdAt
+    }
+  }
+`;
+
 interface VaultDocument {
   id: string;
   workspaceId: string;
@@ -89,8 +123,21 @@ interface VaultDocument {
   currentVersion: number;
   errorMessage?: string | null;
   pageCount?: number | null;
+  chunkCount?: number | null;
   createdAt: string;
   updatedAt: string;
+}
+
+interface DocumentChunkItem {
+  id: string;
+  documentId: string;
+  workspaceId: string;
+  pageNumber?: number | null;
+  sectionHeading?: string | null;
+  chunkIndex: number;
+  content: string;
+  tokenCount: number;
+  createdAt: string;
 }
 
 export default function DocumentVaultPage() {
@@ -103,9 +150,13 @@ export default function DocumentVaultPage() {
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadingFileName, setUploadingFileName] = useState<string | null>(null);
 
+  // Chunk Inspector Drawer state
+  const [inspectingDoc, setInspectingDoc] = useState<VaultDocument | null>(null);
+  const [copiedChunkId, setCopiedChunkId] = useState<string | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Load documents for current workspace
+  // Load documents for current workspace with reactive polling if any doc is processing
   const { data: documentsData, isLoading: documentsLoading } = useQuery({
     queryKey: ['documents', currentWorkspace?.id],
     queryFn: async () => {
@@ -116,9 +167,51 @@ export default function DocumentVaultPage() {
       );
     },
     enabled: !!currentWorkspace?.id,
+    refetchInterval: (query) => {
+      const docs = query.state.data?.documents || [];
+      const hasActive = docs.some((d) =>
+        ['UPLOADING', 'UPLOADED', 'QUEUED', 'PROCESSING', 'EXTRACTING', 'CHUNKING', 'EMBEDDING', 'INDEXING'].includes(d.status)
+      );
+      return hasActive ? 2500 : false;
+    },
   });
 
   const documents = documentsData?.documents || [];
+
+  // Load chunks for selected inspection document
+  const { data: chunksData, isLoading: chunksLoading } = useQuery({
+    queryKey: ['document-chunks', inspectingDoc?.id],
+    queryFn: async () => {
+      if (!inspectingDoc?.id) return { documentChunks: [] };
+      return graphqlClient.request<{ documentChunks: DocumentChunkItem[] }>(
+        GET_DOCUMENT_CHUNKS_QUERY,
+        { documentId: inspectingDoc.id }
+      );
+    },
+    enabled: !!inspectingDoc?.id,
+  });
+
+  const chunks = chunksData?.documentChunks || [];
+
+  // Process Document mutation
+  const processMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return graphqlClient.request<{ processDocument: VaultDocument }>(
+        PROCESS_DOCUMENT_MUTATION,
+        { id }
+      );
+    },
+    onSuccess: (data) => {
+      toast.success(
+        `Document processed! Extracted ${data.processDocument.chunkCount ?? 0} semantic chunks.`
+      );
+      queryClient.invalidateQueries({ queryKey: ['documents', currentWorkspace?.id] });
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || 'Failed to process document');
+      queryClient.invalidateQueries({ queryKey: ['documents', currentWorkspace?.id] });
+    },
+  });
 
   // Delete mutation
   const deleteMutation = useMutation({
@@ -131,6 +224,7 @@ export default function DocumentVaultPage() {
     onSuccess: () => {
       toast.success('Document deleted from vault');
       queryClient.invalidateQueries({ queryKey: ['documents', currentWorkspace?.id] });
+      if (inspectingDoc) setInspectingDoc(null);
     },
     onError: (err: Error) => {
       toast.error(err.message || 'Failed to delete document');
@@ -224,6 +318,9 @@ export default function DocumentVaultPage() {
       setUploadProgress(100);
       toast.success(`Vaulted ${file.name}`);
       queryClient.invalidateQueries({ queryKey: ['documents', currentWorkspace.id] });
+
+      // Automatically trigger AI processing
+      processMutation.mutate(documentId);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Upload failed';
       toast.error(msg);
@@ -256,6 +353,13 @@ export default function DocumentVaultPage() {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const copyToClipboard = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedChunkId(id);
+    toast.success('Chunk text copied');
+    setTimeout(() => setCopiedChunkId(null), 2000);
   };
 
   const getMimeBadge = (mime: string) => {
@@ -344,7 +448,7 @@ export default function DocumentVaultPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 selection:bg-zinc-800 selection:text-zinc-100">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 selection:bg-zinc-800 selection:text-zinc-100 relative">
       {/* Top Header / Breadcrumbs */}
       <header className="border-b border-zinc-850 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -526,6 +630,7 @@ export default function DocumentVaultPage() {
                     <th className="py-3 px-4">Format</th>
                     <th className="py-3 px-4">Size</th>
                     <th className="py-3 px-4">Intelligence Status</th>
+                    <th className="py-3 px-4">Chunks / Pages</th>
                     <th className="py-3 px-4">Vaulted Date</th>
                     <th className="py-3 px-6 text-right">Actions</th>
                   </tr>
@@ -534,6 +639,8 @@ export default function DocumentVaultPage() {
                   {filteredDocuments.map((doc) => {
                     const mimeInfo = getMimeBadge(doc.mimeType);
                     const MimeIcon = mimeInfo.icon;
+                    const isProcessing = ['PROCESSING', 'EXTRACTING', 'CHUNKING', 'EMBEDDING', 'INDEXING'].includes(doc.status);
+
                     return (
                       <tr key={doc.id} className="hover:bg-zinc-900/40 transition-colors group">
                         <td className="py-4 px-6">
@@ -565,6 +672,18 @@ export default function DocumentVaultPage() {
                         </td>
                         <td className="py-4 px-4">{getStatusBadge(doc.status)}</td>
                         <td className="py-4 px-4 font-mono text-zinc-400">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[11px]">
+                              {doc.chunkCount ?? 0} chunks
+                            </span>
+                            {doc.pageCount && doc.pageCount > 1 && (
+                              <span className="text-[11px] text-zinc-500">
+                                {doc.pageCount} pgs
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-4 px-4 font-mono text-zinc-400">
                           {new Date(doc.createdAt).toLocaleDateString(undefined, {
                             year: 'numeric',
                             month: 'short',
@@ -573,6 +692,30 @@ export default function DocumentVaultPage() {
                         </td>
                         <td className="py-4 px-6 text-right">
                           <div className="flex items-center justify-end gap-1">
+                            {/* Inspect Chunks Button */}
+                            <button
+                              onClick={() => setInspectingDoc(doc)}
+                              title="Inspect semantic chunks and token distribution"
+                              className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+
+                            {/* Trigger AI Processing Button */}
+                            <button
+                              onClick={() => processMutation.mutate(doc.id)}
+                              disabled={isProcessing}
+                              title="Run AI layout parser, chunker & embeddings"
+                              className={`p-1.5 rounded-lg transition-colors ${
+                                isProcessing
+                                  ? 'text-zinc-600 cursor-not-allowed'
+                                  : 'text-zinc-400 hover:text-emerald-400 hover:bg-emerald-950/30'
+                              }`}
+                            >
+                              <Cpu className={`w-4 h-4 ${isProcessing ? 'animate-spin' : ''}`} />
+                            </button>
+
+                            {/* Download Button */}
                             <button
                               onClick={() => handleDownload(doc)}
                               title="Download original file"
@@ -580,6 +723,8 @@ export default function DocumentVaultPage() {
                             >
                               <Download className="w-4 h-4" />
                             </button>
+
+                            {/* Delete Button */}
                             <button
                               onClick={() => {
                                 if (
@@ -604,6 +749,106 @@ export default function DocumentVaultPage() {
           )}
         </div>
       </main>
+
+      {/* Slide-Over Semantic Chunks Inspector Drawer */}
+      {inspectingDoc && (
+        <div className="fixed inset-0 z-50 overflow-hidden bg-zinc-950/80 backdrop-blur-sm flex justify-end">
+          <div className="w-full max-w-2xl bg-zinc-950 border-l border-zinc-800 h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-200">
+            {/* Drawer Header */}
+            <div className="p-6 border-b border-zinc-800 flex items-start justify-between bg-zinc-900/40">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+                    SEMANTIC CHUNK INSPECTOR
+                  </span>
+                  <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-zinc-800 text-zinc-300">
+                    {chunks.length} chunks
+                  </span>
+                </div>
+                <h3 className="text-base font-semibold text-zinc-100 truncate max-w-lg">
+                  {inspectingDoc.title}
+                </h3>
+              </div>
+              <button
+                onClick={() => setInspectingDoc(null)}
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Chunks List */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {chunksLoading ? (
+                <div className="py-20 flex flex-col items-center justify-center text-zinc-500 gap-3">
+                  <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
+                  <span className="text-xs font-mono">LOADING EMBEDDED CHUNKS...</span>
+                </div>
+              ) : chunks.length === 0 ? (
+                <div className="py-20 text-center space-y-3">
+                  <Cpu className="w-8 h-8 text-zinc-600 mx-auto" />
+                  <p className="text-sm font-medium text-zinc-300">No chunks generated yet</p>
+                  <p className="text-xs text-zinc-500 max-w-sm mx-auto">
+                    Click the CPU icon on the document to run the layout parser and semantic boundary chunker.
+                  </p>
+                  <button
+                    onClick={() => processMutation.mutate(inspectingDoc.id)}
+                    className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-950 font-medium text-xs rounded-lg transition-colors inline-flex items-center gap-1.5"
+                  >
+                    <Cpu className="w-4 h-4" />
+                    Process Document Now
+                  </button>
+                </div>
+              ) : (
+                chunks.map((chk) => (
+                  <div
+                    key={chk.id}
+                    className="p-4 rounded-xl border border-zinc-800/80 bg-zinc-900/30 hover:border-zinc-700 transition-colors space-y-3"
+                  >
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-zinc-400 text-[11px] bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded">
+                          #{chk.chunkIndex}
+                        </span>
+                        {chk.sectionHeading && (
+                          <span className="font-mono text-zinc-300 text-[11px] bg-zinc-800/60 px-2 py-0.5 rounded truncate max-w-xs">
+                            {chk.sectionHeading}
+                          </span>
+                        )}
+                        {chk.pageNumber && (
+                          <span className="text-[11px] text-zinc-500 font-mono">
+                            Page {chk.pageNumber}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-mono text-zinc-500">
+                          {chk.tokenCount} tokens
+                        </span>
+                        <button
+                          onClick={() => copyToClipboard(chk.content, chk.id)}
+                          className="p-1 text-zinc-500 hover:text-zinc-200 transition-colors"
+                          title="Copy chunk content"
+                        >
+                          {copiedChunkId === chk.id ? (
+                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="text-xs text-zinc-300 leading-relaxed font-sans bg-zinc-950/40 p-3 rounded-lg border border-zinc-900 whitespace-pre-wrap max-h-48 overflow-y-auto">
+                      {chk.content}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import type { GraphQLDataLoaders } from '../lib/dataloaders';
 import { AuthService } from '../auth/service';
 import { WorkspaceService } from '../workspaces/service';
 import { DocumentService } from '../documents/service';
+import { IngestionService } from '../documents/ingestion';
 import type { UserRole } from '@kuripp/shared-types';
 import {
   REFRESH_COOKIE_NAME,
@@ -117,6 +118,11 @@ export const resolvers = {
         ipHash: ctx.req?.ip,
         userAgent: ctx.req?.get('user-agent'),
       });
+    },
+
+    documentChunks: async (_: unknown, args: { documentId: string }, ctx: GraphQLContext) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return DocumentService.getDocumentChunks(ctx.userId, args.documentId);
     },
 
     whatsAppLogs: async (_: unknown, args: { limit?: number }) => {
@@ -384,6 +390,18 @@ export const resolvers = {
       });
     },
 
+    processDocument: async (
+      _: unknown,
+      args: { id: string },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return IngestionService.processDocument(ctx.userId, args.id, {
+        ipHash: ctx.req?.ip,
+        userAgent: ctx.req?.get('user-agent'),
+      });
+    },
+
     deleteDocument: async (
       _: unknown,
       args: { id: string },
@@ -394,6 +412,12 @@ export const resolvers = {
         ipHash: ctx.req?.ip,
         userAgent: ctx.req?.get('user-agent'),
       });
+    },
+  },
+
+  Document: {
+    chunkCount: async (parent: { id: string }) => {
+      return DocumentService.getChunkCount(parent.id);
     },
   },
 };

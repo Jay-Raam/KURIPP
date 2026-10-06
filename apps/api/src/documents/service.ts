@@ -299,4 +299,42 @@ export class DocumentService {
       fileSize: Number(doc.fileSize),
     };
   }
+
+  /**
+   * Retrieves all document chunks for a given document after verifying document:read permission
+   */
+  static async getDocumentChunks(userId: string, documentId: string) {
+    const doc = await prisma.document.findUnique({
+      where: { id: documentId },
+    });
+
+    if (!doc) {
+      throw new Error('Document not found');
+    }
+
+    const role = await WorkspaceService.getMemberRole(userId, doc.workspaceId);
+    if (!role) {
+      throw new Error('Access denied: You are not a member of this workspace.');
+    }
+    requirePermission(role, 'document:read');
+
+    const chunks = await prisma.documentChunk.findMany({
+      where: { documentId },
+      orderBy: { chunkIndex: 'asc' },
+    });
+
+    return chunks.map((c) => ({
+      ...c,
+      id: String(c.id),
+    }));
+  }
+
+  /**
+   * Retrieves chunk count for a document
+   */
+  static async getChunkCount(documentId: string): Promise<number> {
+    return prisma.documentChunk.count({
+      where: { documentId },
+    });
+  }
 }

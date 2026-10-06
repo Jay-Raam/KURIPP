@@ -21,6 +21,8 @@ const envSchema = z.object({
   OPENROUTER_DEFAULT_MODEL: z.string().default('meta-llama/llama-3.3-70b-instruct:free'),
   OPENROUTER_BASE_URL: z.string().default('https://openrouter.ai/api/v1'),
 
+  AI_SERVICE_URL: z.string().default('http://localhost:8000'),
+
   ALERT_WHATSAPP_NUMBER: z.string().default(''),
   WHATSAPP_API_URL: z.string().default('http://localhost:8080'),
   WHATSAPP_API_KEY: z.string().default(''),
