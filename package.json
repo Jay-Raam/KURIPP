@@ -19,6 +19,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md}\"",
     "db:generate": "pnpm --filter @kuripp/api db:generate",
+    "db-generate": "pnpm --filter @kuripp/api db:generate",
     "db:migrate": "pnpm --filter @kuripp/api db:migrate",
     "db:seed": "pnpm --filter @kuripp/api db:seed",
     "docker:up": "docker compose up -d",
