@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: KURIPP
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: pnpm install --prod=false && pnpm build:api
+    startCommand: pnpm --filter @kuripp/api start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: COOKIE_SECRET
+        sync: false
+      - key: WEB_URL
+        value: https://kuripp-p86jsebbv-jayasriraams-projects.vercel.app

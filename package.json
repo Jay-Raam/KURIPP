@@ -13,6 +13,7 @@
     "doctor": "node scripts/doctor.mjs",
     "smoke": "node scripts/smoke-test.mjs",
     "build": "turbo run build",
+    "build:api": "pnpm db:generate && pnpm --filter @kuripp/shared-types build && pnpm --filter @kuripp/api build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
