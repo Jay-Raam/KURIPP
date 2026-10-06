@@ -10,10 +10,10 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "typescript": "^5.8.2"
+    "typescript": "^6.0.3"
   },
   "devDependencies": {
     "@kuripp/tsconfig": "workspace:*",
-    "typescript": "^5.8.2"
+    "typescript": "^6.0.3"
   }
 }
