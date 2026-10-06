@@ -82,7 +82,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install uv Package Manager
-        uses: astral-sh/setup-uv@v2
+        uses: astral-sh/setup-uv@v7
 
       - name: Install Python Dependencies & Run Pytest
         working-directory: services/ai
