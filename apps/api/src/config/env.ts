@@ -13,7 +13,7 @@ const envSchema = z.object({
   MONGODB_URI: z.string().default('mongodb://localhost:27017/kuripp_dev'),
   REDIS_URL: z.string().default('redis://localhost:6379'),
 
-  JWT_SECRET: z.string().default('kuripp_dev_jwt_secret_min_32_characters_long_12345'),
+  JWT_SECRET: z.string().default(() => process.env.JWT_ACCESS_SECRET || 'kuripp_dev_jwt_secret_min_32_characters_long_12345'),
   JWT_REFRESH_SECRET: z.string().default('kuripp_dev_refresh_secret_min_32_characters_long_12345'),
   COOKIE_SECRET: z.string().default('kuripp_dev_cookie_secret_min_32_characters_long_12345'),
 
