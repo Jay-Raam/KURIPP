@@ -1,0 +1,22 @@
+[project]
+name = "kuripp-ai-service"
+version = "0.1.0"
+description = "Internal Python Document Intelligence and RAG Service for KURIPP"
+authors = [{ name = "Jay Raam", email = "jay@kuripp.local" }]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.34.0",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.7.0",
+    "httpx>=0.28.0",
+    "python-dotenv>=1.0.1",
+    "pytest>=8.3.0",
+    "numpy>=1.26.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+pythonpath = ["."]
