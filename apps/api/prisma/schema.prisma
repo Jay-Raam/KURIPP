@@ -50,6 +50,9 @@ model User {
   auditLogs     AuditLog[]
   passwordResets PasswordResetToken[]
   emailVerifications EmailVerificationToken[]
+  researchNotes ResearchNote[]
+  documentComparisons DocumentComparison[]
+  generatedReports GeneratedReport[]
 
   @@map("users")
 }
@@ -122,6 +125,10 @@ model Workspace {
   documents      Document[]
   chunks         DocumentChunk[]
   auditLogs      AuditLog[]
+  collections    Collection[]
+  researchNotes  ResearchNote[]
+  documentComparisons DocumentComparison[]
+  generatedReports GeneratedReport[]
 
   @@index([organizationId])
   @@map("workspaces")
@@ -156,6 +163,9 @@ model Document {
   updatedAt      DateTime                 @updatedAt @map("updated_at")
   workspace      Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   chunks         DocumentChunk[]
+  collections    CollectionDocument[]
+  baseComparisons DocumentComparison[]     @relation("BaseDocument")
+  targetComparisons DocumentComparison[]   @relation("TargetDocument")
 
   @@index([workspaceId, createdAt(sort: Desc)])
   @@map("documents")
@@ -216,4 +226,88 @@ model AuditLog {
   @@index([workspaceId, createdAt(sort: Desc)])
   @@index([userId])
   @@map("audit_logs")
+}
+
+model Collection {
+  id          String               @id @default(uuid())
+  workspaceId String               @map("workspace_id")
+  name        String
+  description String?
+  color       String?              @default("zinc")
+  createdAt   DateTime             @default(now()) @map("created_at")
+  updatedAt   DateTime             @updatedAt @map("updated_at")
+  workspace   Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  documents   CollectionDocument[]
+  notes       ResearchNote[]
+
+  @@index([workspaceId])
+  @@map("collections")
+}
+
+model CollectionDocument {
+  id           String     @id @default(uuid())
+  collectionId String     @map("collection_id")
+  documentId   String     @map("document_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  document     Document   @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, documentId])
+  @@map("collection_documents")
+}
+
+model ResearchNote {
+  id              String      @id @default(uuid())
+  workspaceId     String      @map("workspace_id")
+  userId          String      @map("user_id")
+  collectionId    String?     @map("collection_id")
+  title           String
+  content         String
+  tags            String[]    @default([])
+  sourceCitations Json?       @map("source_citations")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  workspace       Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  collection      Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt(sort: Desc)])
+  @@index([userId])
+  @@map("research_notes")
+}
+
+model DocumentComparison {
+  id               String    @id @default(uuid())
+  workspaceId      String    @map("workspace_id")
+  userId           String    @map("user_id")
+  baseDocumentId   String    @map("base_document_id")
+  targetDocumentId String    @map("target_document_id")
+  title            String
+  summary          String
+  diffData         Json      @map("diff_data")
+  aiAnalysis       String    @map("ai_analysis")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  baseDocument     Document  @relation("BaseDocument", fields: [baseDocumentId], references: [id], onDelete: Cascade)
+  targetDocument   Document  @relation("TargetDocument", fields: [targetDocumentId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt(sort: Desc)])
+  @@map("document_comparisons")
+}
+
+model GeneratedReport {
+  id          String    @id @default(uuid())
+  workspaceId String    @map("workspace_id")
+  userId      String    @map("user_id")
+  title       String
+  format      String    @default("MARKDOWN")
+  content     String
+  metadata    Json?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt(sort: Desc)])
+  @@map("generated_reports")
 }

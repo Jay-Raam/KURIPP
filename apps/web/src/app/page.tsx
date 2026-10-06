@@ -113,6 +113,12 @@ export default function HomePage() {
                   Research Chat
                 </Link>
                 <Link
+                  href="/research"
+                  className="hidden md:inline-flex h-8 items-center justify-center rounded border border-border bg-card px-2.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+                >
+                  Research Studio
+                </Link>
+                <Link
                   href="/documents"
                   className="hidden md:inline-flex h-8 items-center justify-center rounded border border-border bg-card px-2.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
                 >
@@ -350,6 +356,14 @@ export default function HomePage() {
                   Source attribution down to exact document, page, and chunk excerpt. In-memory
                   security prevents token leakage.
                 </p>
+                <div className="pt-2">
+                  <Link
+                    href="/research"
+                    className="inline-flex items-center text-xs text-foreground font-mono hover:underline"
+                  >
+                    Launch Research Studio →
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
