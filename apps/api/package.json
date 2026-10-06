@@ -21,7 +21,7 @@
     "@graphql-yoga/plugin-defer-stream": "^3.12.3",
     "@kuripp/graphql-schema": "workspace:*",
     "@kuripp/shared-types": "workspace:*",
-    "@prisma/client": "^6.4.1",
+    "@prisma/client": "^7.10.0",
     "argon2": "^0.41.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
