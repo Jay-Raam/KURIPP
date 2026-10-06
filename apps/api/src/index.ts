@@ -12,6 +12,7 @@ import { redis } from './lib/redis';
 import { connectMongoDB } from './lib/mongodb';
 
 import { verifyAccessToken } from './auth/tokens';
+import { alertsWebhookRouter } from './alerts/webhooks';
 
 async function bootstrap() {
   const app = express();
@@ -26,6 +27,9 @@ async function bootstrap() {
   );
   app.use(cookieParser(env.COOKIE_SECRET));
   app.use(express.json({ limit: '10mb' }));
+
+  // Internal Service & Third-Party Webhooks (Evolution API status & GitHub Actions alerts)
+  app.use('/api/webhooks', alertsWebhookRouter);
 
   // Initialize GraphQL Yoga v5
   const yoga = createYoga<{

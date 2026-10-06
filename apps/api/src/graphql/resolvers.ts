@@ -16,6 +16,7 @@ import { DocumentComparisonEngine } from '../tools/diff';
 import { AiToolRunner } from '../tools/runner';
 import { ReportsService } from '../reports/service';
 import { AiEvaluationHarness } from '../evaluation/harness';
+import { AlertsService } from '../alerts/service';
 import type { UserRole } from '@kuripp/shared-types';
 import {
   REFRESH_COOKIE_NAME,
@@ -703,6 +704,18 @@ export const resolvers = {
     ) => {
       if (!ctx.userId) throw new Error('Unauthorized');
       return ReportsService.deleteReport(ctx.userId, args.id);
+    },
+
+    testWhatsAppAlert: async (
+      _: unknown,
+      args: { message?: string | null; severity?: any },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return AlertsService.testAlert(
+        args.message || 'Verification test alert dispatched from KURIPP dashboard',
+        args.severity || 'INFO'
+      );
     },
   },
 

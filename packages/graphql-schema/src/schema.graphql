@@ -280,6 +280,9 @@ type Mutation {
   executeAiTool(input: ExecuteAiToolInput!): ToolExecutionResult!
   generateReport(input: CreateReportInput!): GeneratedReportPayload!
   deleteReport(id: ID!): Boolean!
+
+  # Phase 10: WhatsApp Alerting
+  testWhatsAppAlert(message: String, severity: String): WhatsAppLog!
 }
 
 input CreateDocumentUploadInput {

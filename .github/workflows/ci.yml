@@ -1,66 +1,141 @@
-name: KURIPP CI Pipeline
+name: KURIPP CI/CD Pipeline
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, feature/**]
   pull_request:
-    branches: [main, develop]
+    branches: [main]
 
 jobs:
-  quality-and-tests:
-    name: Lint, Test & Build
+  lint-and-typecheck:
+    name: Lint & Typecheck
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Source Code
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 22
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
 
-      - name: Setup pnpm 9
-        uses: pnpm/action-setup@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
         with:
-          version: 9.15.9
-          run_install: false
+          version: 9
 
-      - name: Setup Python via Astral uv
-        uses: astral-sh/setup-uv@v5
-        with:
-          python-version: "3.11"
-          enable-cache: true
-
-      - name: Get pnpm Store Directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm Cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install Node Dependencies
+      - name: Install Monorepo Dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Generate Prisma Client
-        run: pnpm db:generate
+        run: pnpm --filter @kuripp/api db:generate
 
-      - name: Run Node Tests
-        run: pnpm test
-
-      - name: Setup Python Environment & Run Pytest
+      - name: Typecheck TypeScript Workspaces
         run: |
-          cd services/ai
-          uv venv
-          source .venv/bin/activate
-          uv pip install fastapi uvicorn pydantic pydantic-settings httpx python-dotenv pytest numpy
-          pytest
+          pnpm --filter @kuripp/shared-types build
+          pnpm --filter @kuripp/api typecheck
+          pnpm --filter @kuripp/web typecheck
 
-      - name: Run Monorepo Build
-        run: pnpm build
+  test-node-suites:
+    name: Node Test Suites (API & Web)
+    needs: [lint-and-typecheck]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install Monorepo Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter @kuripp/api db:generate
+
+      - name: Build Shared Types
+        run: pnpm --filter @kuripp/shared-types build
+
+      - name: Run API Vitest Suite (44 Tests)
+        run: pnpm --filter @kuripp/api test
+
+      - name: Run Web Security Storage Test Suite
+        run: pnpm --filter @kuripp/web test
+
+  test-python-ai:
+    name: Python AI Ingestion & Embeddings
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv Package Manager
+        uses: astral-sh/setup-uv@v2
+
+      - name: Install Python Dependencies & Run Pytest
+        working-directory: services/ai
+        run: |
+          uv sync
+          uv run pytest
+
+  build-production-web:
+    name: Next.js Production Build
+    needs: [test-node-suites, test-python-ai]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install Monorepo Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Shared Types
+        run: pnpm --filter @kuripp/shared-types build
+
+      - name: Build Next.js Production Web
+        env:
+          NEXT_PUBLIC_GRAPHQL_ENDPOINT: https://api.kuripp.internal/graphql
+        run: pnpm --filter @kuripp/web build
+
+  notify-failure-whatsapp:
+    name: Notify CI Failure via WhatsApp
+    needs: [lint-and-typecheck, test-node-suites, test-python-ai, build-production-web]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send CI Alert Webhook
+        env:
+          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL || 'https://api.kuripp.internal/api/webhooks/ci-alert' }}
+        run: |
+          curl -s -X POST "$ALERT_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "branch": "${{ github.ref_name }}",
+              "commit": "${{ github.sha }}",
+              "author": "${{ github.actor }}",
+              "jobName": "GitHub Actions CI Run",
+              "runUrl": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+              "failureReason": "One or more pipeline verification jobs failed in CI matrix."
+            }' || true
