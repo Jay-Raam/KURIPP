@@ -2,7 +2,8 @@ import { GraphQLClient } from 'graphql-request';
 import { authTokenStore } from './auth-token-store';
 
 const GRAPHQL_ENDPOINT =
-  process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT || 'http://localhost:4000/graphql';
+  process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT ||
+  (typeof window !== 'undefined' ? '/graphql' : 'http://localhost:4000/graphql');
 
 export const graphqlClient = new GraphQLClient(GRAPHQL_ENDPOINT, {
   fetch: (url, init) => {
