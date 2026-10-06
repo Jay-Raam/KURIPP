@@ -11,6 +11,8 @@ import { createDataLoaders } from './lib/dataloaders';
 import { redis } from './lib/redis';
 import { connectMongoDB } from './lib/mongodb';
 
+import { verifyAccessToken } from './auth/tokens';
+
 async function bootstrap() {
   const app = express();
   const server = http.createServer(app);
@@ -26,21 +28,37 @@ async function bootstrap() {
   app.use(express.json({ limit: '10mb' }));
 
   // Initialize GraphQL Yoga v5
-  const yoga = createYoga({
+  const yoga = createYoga<{
+    req?: express.Request;
+    res?: express.Response;
+  }>({
     schema,
     graphqlEndpoint: '/graphql',
     graphiql: env.NODE_ENV !== 'production',
     maskedErrors: env.NODE_ENV === 'production',
-    context: async ({ request }) => {
+    context: async ({ req, res, request }) => {
+      const authHeader = req?.headers.authorization || request?.headers.get('authorization');
+      let userId: string | null = null;
+      if (authHeader?.startsWith('Bearer ')) {
+        const token = authHeader.slice(7);
+        const decoded = verifyAccessToken(token);
+        if (decoded) userId = decoded.userId;
+      }
+
       return {
         loaders: createDataLoaders(),
-        req: request,
+        req,
+        res,
+        request,
+        userId,
       };
     },
   });
 
   // Mount GraphQL Yoga strictly at /graphql
-  app.use('/graphql', yoga);
+  app.use('/graphql', (req, res) => {
+    return yoga(req, res);
+  });
 
   // Attach Socket.IO for Realtime Communication
   const io = new SocketIOServer(server, {

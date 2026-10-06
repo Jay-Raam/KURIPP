@@ -3,12 +3,20 @@ import { prisma } from '../lib/prisma';
 import { redis } from '../lib/redis';
 import mongoose from 'mongoose';
 import type { GraphQLDataLoaders } from '../lib/dataloaders';
+import { AuthService } from '../auth/service';
+import {
+  REFRESH_COOKIE_NAME,
+  REFRESH_COOKIE_OPTIONS,
+  hashToken,
+} from '../auth/tokens';
+import type { Request, Response } from 'express';
 
 export interface GraphQLContext {
   userId?: string | null;
   loaders: GraphQLDataLoaders;
-  req: any;
-  res: any;
+  req?: Request;
+  res?: Response;
+  request?: globalThis.Request;
 }
 
 export const resolvers = {
@@ -54,6 +62,15 @@ export const resolvers = {
       return ctx.loaders.userLoader.load(ctx.userId);
     },
 
+    mySessions: async (_: unknown, __: unknown, ctx: GraphQLContext) => {
+      if (!ctx.userId) {
+        throw new Error('Unauthorized.');
+      }
+      const rawRefreshToken = ctx.req?.cookies?.[REFRESH_COOKIE_NAME];
+      const currentHash = rawRefreshToken ? hashToken(rawRefreshToken) : undefined;
+      return AuthService.getUserSessions(ctx.userId, currentHash);
+    },
+
     myWorkspaces: async (_: unknown, __: unknown, ctx: GraphQLContext) => {
       if (!ctx.userId) return [];
       const memberships = await prisma.workspaceMember.findMany({
@@ -90,20 +107,147 @@ export const resolvers = {
       return 'pong';
     },
 
-    register: async () => {
-      throw new Error('Register will be fully wired in Phase 2');
+    register: async (
+      _: unknown,
+      args: { input: { email: string; password: string; fullName: string } },
+      ctx: GraphQLContext
+    ) => {
+      const meta = {
+        ipHash: ctx.req?.ip,
+        userAgent: ctx.req?.get('user-agent'),
+      };
+
+      const result = await AuthService.register(args.input, meta);
+
+      if (ctx.res) {
+        ctx.res.cookie(
+          REFRESH_COOKIE_NAME,
+          result.rawRefreshToken,
+          REFRESH_COOKIE_OPTIONS
+        );
+      }
+
+      return {
+        accessToken: result.accessToken,
+        user: result.user,
+      };
     },
 
-    login: async () => {
-      throw new Error('Login will be fully wired in Phase 2');
+    login: async (
+      _: unknown,
+      args: { input: { email: string; password: string } },
+      ctx: GraphQLContext
+    ) => {
+      const meta = {
+        ipHash: ctx.req?.ip,
+        userAgent: ctx.req?.get('user-agent'),
+      };
+
+      const result = await AuthService.login(args.input, meta);
+
+      if (ctx.res) {
+        ctx.res.cookie(
+          REFRESH_COOKIE_NAME,
+          result.rawRefreshToken,
+          REFRESH_COOKIE_OPTIONS
+        );
+      }
+
+      return {
+        accessToken: result.accessToken,
+        user: result.user,
+      };
     },
 
-    logout: () => {
+    refreshToken: async (_: unknown, __: unknown, ctx: GraphQLContext) => {
+      // Extract from HttpOnly cookie
+      const rawRefreshToken = ctx.req?.cookies?.[REFRESH_COOKIE_NAME];
+      if (!rawRefreshToken) {
+        throw new Error('No refresh token cookie found.');
+      }
+
+      const meta = {
+        ipHash: ctx.req?.ip,
+        userAgent: ctx.req?.get('user-agent'),
+      };
+
+      const result = await AuthService.refreshSession(rawRefreshToken, meta);
+
+      if (ctx.res) {
+        ctx.res.cookie(
+          REFRESH_COOKIE_NAME,
+          result.newRawRefreshToken,
+          REFRESH_COOKIE_OPTIONS
+        );
+      }
+
+      return {
+        accessToken: result.accessToken,
+        user: result.user,
+      };
+    },
+
+    logout: async (_: unknown, __: unknown, ctx: GraphQLContext) => {
+      const rawRefreshToken = ctx.req?.cookies?.[REFRESH_COOKIE_NAME];
+      if (rawRefreshToken) {
+        await AuthService.logout(rawRefreshToken);
+      }
+
+      if (ctx.res) {
+        ctx.res.clearCookie(REFRESH_COOKIE_NAME, {
+          path: '/graphql',
+        });
+      }
+
       return true;
     },
 
-    refreshToken: async () => {
-      throw new Error('RefreshToken will be fully wired in Phase 2');
+    requestPasswordReset: async (
+      _: unknown,
+      args: { input: { email: string } }
+    ) => {
+      return AuthService.requestPasswordReset(args.input.email);
+    },
+
+    resetPassword: async (
+      _: unknown,
+      args: { input: { token: string; newPassword: string } }
+    ) => {
+      return AuthService.resetPassword(args.input.token, args.input.newPassword);
+    },
+
+    verifyEmail: async (_: unknown, args: { token: string }) => {
+      const record = await prisma.emailVerificationToken.findUnique({
+        where: { tokenHash: hashToken(args.token) },
+      });
+
+      if (!record || record.isUsed || record.expiresAt < new Date()) {
+        throw new Error('Invalid or expired verification link.');
+      }
+
+      await prisma.$transaction([
+        prisma.user.update({
+          where: { id: record.userId },
+          data: { emailVerified: true },
+        }),
+        prisma.emailVerificationToken.update({
+          where: { id: record.id },
+          data: { isUsed: true },
+        }),
+      ]);
+
+      return true;
+    },
+
+    revokeSession: async (
+      _: unknown,
+      args: { sessionId: string },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) {
+        throw new Error('Unauthorized.');
+      }
+      return AuthService.revokeSession(ctx.userId, args.sessionId);
     },
   },
 };
