@@ -212,13 +212,14 @@ importers:
   packages/graphql-schema: {}
 
   packages/shared-types:
+    dependencies:
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
     devDependencies:
       '@kuripp/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
-      typescript:
-        specifier: ^5.8.2
-        version: 5.9.3
 
   packages/tsconfig: {}
 

@@ -9,6 +9,9 @@
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist"
   },
+  "dependencies": {
+    "typescript": "^5.8.2"
+  },
   "devDependencies": {
     "@kuripp/tsconfig": "workspace:*",
     "typescript": "^5.8.2"
