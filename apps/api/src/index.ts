@@ -59,6 +59,15 @@ async function bootstrap() {
     },
   });
 
+  // Health & Root Endpoints for Cloud Load Balancers
+  app.get('/health', (_req, res) => {
+    res.status(200).json({ status: 'ok', uptime: process.uptime() });
+  });
+
+  app.get('/', (_req, res) => {
+    res.status(200).send('KURIPP GraphQL API Server is running.');
+  });
+
   // Mount GraphQL Yoga strictly at /graphql
   app.use('/graphql', (req, res) => {
     return yoga(req, res);
@@ -97,8 +106,8 @@ async function bootstrap() {
 
   await connectMongoDB();
 
-  // Start HTTP Server
-  server.listen(env.PORT, () => {
+  // Start HTTP Server binding to all interfaces (0.0.0.0) for cloud hosts
+  server.listen(env.PORT, '0.0.0.0', () => {
     logger.info(`====================================================`);
     logger.info(`KURIPP GraphQL API Server started on port ${env.PORT}`);
     logger.info(`GraphQL Endpoint: http://localhost:${env.PORT}/graphql`);
