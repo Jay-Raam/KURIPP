@@ -114,11 +114,34 @@ type SessionInfo {
   expiresAt: DateTime!
 }
 
+type WorkspaceMemberInfo {
+  id: ID!
+  workspaceId: ID!
+  user: User!
+  role: UserRole!
+  createdAt: DateTime!
+}
+
+type AuditLogRecord {
+  id: ID!
+  action: String!
+  resourceType: String!
+  resourceId: String
+  user: User
+  ipHash: String
+  userAgent: String
+  metadata: JSON
+  createdAt: DateTime!
+}
+
 type Query {
   health: SystemHealth!
   me: User
   mySessions: [SessionInfo!]!
   myWorkspaces: [Workspace!]!
+  workspace(id: ID!): Workspace
+  workspaceMembers(workspaceId: ID!): [WorkspaceMemberInfo!]!
+  auditLogs(workspaceId: ID!, limit: Int): [AuditLogRecord!]!
   openRouterModels: [OpenRouterModel!]!
   documents(workspaceId: ID!): [Document!]!
   whatsAppLogs(limit: Int): [WhatsAppLog!]!
@@ -134,6 +157,36 @@ type Mutation {
   resetPassword(input: ResetPasswordInput!): Boolean!
   verifyEmail(token: String!): Boolean!
   revokeSession(sessionId: ID!): Boolean!
+
+  createWorkspace(input: CreateWorkspaceInput!): Workspace!
+  updateWorkspace(id: ID!, input: UpdateWorkspaceInput!): Workspace!
+  deleteWorkspace(id: ID!): Boolean!
+  inviteWorkspaceMember(input: InviteMemberInput!): WorkspaceMemberInfo!
+  updateMemberRole(input: UpdateMemberRoleInput!): WorkspaceMemberInfo!
+  removeWorkspaceMember(workspaceId: ID!, memberId: ID!): Boolean!
+}
+
+input CreateWorkspaceInput {
+  name: String!
+  slug: String
+  description: String
+}
+
+input UpdateWorkspaceInput {
+  name: String
+  description: String
+}
+
+input InviteMemberInput {
+  workspaceId: ID!
+  email: String!
+  role: UserRole!
+}
+
+input UpdateMemberRoleInput {
+  workspaceId: ID!
+  memberId: ID!
+  role: UserRole!
 }
 
 input RegisterInput {
@@ -155,4 +208,5 @@ input ResetPasswordInput {
   token: String!
   newPassword: String!
 }
+
 
