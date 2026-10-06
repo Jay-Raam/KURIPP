@@ -86,6 +86,49 @@ type DocumentChunk {
   createdAt: DateTime!
 }
 
+type SearchCitation {
+  documentId: ID!
+  documentTitle: String!
+  chunkId: ID!
+  pageNumber: Int
+  sectionHeading: String
+  content: String!
+  score: Float!
+}
+
+type SearchResult {
+  query: String!
+  totalResults: Int!
+  citations: [SearchCitation!]!
+}
+
+type ChatMessage {
+  id: ID!
+  sessionId: ID!
+  role: String!
+  content: String!
+  model: String
+  citations: [SearchCitation!]!
+  createdAt: DateTime!
+}
+
+type ChatSession {
+  id: ID!
+  workspaceId: ID!
+  title: String!
+  mode: AIMode!
+  model: String!
+  messageCount: Int!
+  lastMessageAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type ChatSessionDetail {
+  session: ChatSession!
+  messages: [ChatMessage!]!
+}
+
 type OpenRouterModel {
   id: String!
   name: String!
@@ -172,6 +215,9 @@ type Query {
   document(id: ID!): Document
   documentDownloadUrl(id: ID!): DocumentDownloadPayload!
   documentChunks(documentId: ID!): [DocumentChunk!]!
+  searchKnowledge(input: SearchKnowledgeInput!): SearchResult!
+  chatSessions(workspaceId: ID!): [ChatSession!]!
+  chatSession(id: ID!): ChatSessionDetail
   whatsAppLogs(limit: Int): [WhatsAppLog!]!
 }
 
@@ -197,6 +243,10 @@ type Mutation {
   confirmDocumentUpload(input: ConfirmDocumentUploadInput!): Document!
   processDocument(id: ID!): Document!
   deleteDocument(id: ID!): Boolean!
+
+  createChatSession(input: CreateChatSessionInput!): ChatSession!
+  sendMessage(input: SendMessageInput!): ChatMessage!
+  deleteChatSession(id: ID!): Boolean!
 }
 
 input CreateDocumentUploadInput {
@@ -253,6 +303,27 @@ input RequestPasswordResetInput {
 input ResetPasswordInput {
   token: String!
   newPassword: String!
+}
+
+input SearchKnowledgeInput {
+  workspaceId: ID!
+  query: String!
+  limit: Int
+}
+
+input CreateChatSessionInput {
+  workspaceId: ID!
+  title: String
+  mode: AIMode
+  model: String
+}
+
+input SendMessageInput {
+  sessionId: ID!
+  workspaceId: ID!
+  content: String!
+  mode: AIMode
+  model: String
 }
 
 

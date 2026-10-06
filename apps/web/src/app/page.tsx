@@ -107,6 +107,12 @@ export default function HomePage() {
               <div className="flex items-center space-x-2">
                 <WorkspaceSwitcher />
                 <Link
+                  href="/chat"
+                  className="hidden md:inline-flex h-8 items-center justify-center rounded border border-border bg-card px-2.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+                >
+                  Research Chat
+                </Link>
+                <Link
                   href="/documents"
                   className="hidden md:inline-flex h-8 items-center justify-center rounded border border-border bg-card px-2.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
                 >
@@ -325,6 +331,14 @@ export default function HomePage() {
                   PostgreSQL 17 HNSW dense cosine vectors fused with tsvector lexical search via
                   single-query Reciprocal Rank Fusion (k=60).
                 </p>
+                <div className="pt-2">
+                  <Link
+                    href="/chat"
+                    className="inline-flex items-center text-xs text-foreground font-mono hover:underline"
+                  >
+                    Launch Research Chat →
+                  </Link>
+                </div>
               </div>
 
               <div className="space-y-2">

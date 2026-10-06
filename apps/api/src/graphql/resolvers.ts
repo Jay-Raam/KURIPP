@@ -7,6 +7,8 @@ import { AuthService } from '../auth/service';
 import { WorkspaceService } from '../workspaces/service';
 import { DocumentService } from '../documents/service';
 import { IngestionService } from '../documents/ingestion';
+import { HybridSearchService } from '../search/hybrid';
+import { ChatService } from '../chat/service';
 import type { UserRole } from '@kuripp/shared-types';
 import {
   REFRESH_COOKIE_NAME,
@@ -123,6 +125,33 @@ export const resolvers = {
     documentChunks: async (_: unknown, args: { documentId: string }, ctx: GraphQLContext) => {
       if (!ctx.userId) throw new Error('Unauthorized');
       return DocumentService.getDocumentChunks(ctx.userId, args.documentId);
+    },
+
+    searchKnowledge: async (
+      _: unknown,
+      args: { input: { workspaceId: string; query: string; limit?: number } },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return HybridSearchService.search(ctx.userId, args.input);
+    },
+
+    chatSessions: async (
+      _: unknown,
+      args: { workspaceId: string },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return ChatService.listSessions(ctx.userId, args.workspaceId);
+    },
+
+    chatSession: async (
+      _: unknown,
+      args: { id: string },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return ChatService.getSession(ctx.userId, args.id);
     },
 
     whatsAppLogs: async (_: unknown, args: { limit?: number }) => {
@@ -412,6 +441,48 @@ export const resolvers = {
         ipHash: ctx.req?.ip,
         userAgent: ctx.req?.get('user-agent'),
       });
+    },
+
+    createChatSession: async (
+      _: unknown,
+      args: {
+        input: {
+          workspaceId: string;
+          title?: string | null;
+          mode?: string | null;
+          model?: string | null;
+        };
+      },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return ChatService.createSession(ctx.userId, args.input);
+    },
+
+    sendMessage: async (
+      _: unknown,
+      args: {
+        input: {
+          sessionId: string;
+          workspaceId: string;
+          content: string;
+          mode?: string | null;
+          model?: string | null;
+        };
+      },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return ChatService.sendMessage(ctx.userId, args.input);
+    },
+
+    deleteChatSession: async (
+      _: unknown,
+      args: { id: string },
+      ctx: GraphQLContext
+    ) => {
+      if (!ctx.userId) throw new Error('Unauthorized');
+      return ChatService.deleteSession(ctx.userId, args.id);
     },
   },
 
