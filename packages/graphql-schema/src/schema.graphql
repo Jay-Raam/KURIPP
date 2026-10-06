@@ -69,8 +69,21 @@ type Document {
   currentVersion: Int!
   errorMessage: String
   pageCount: Int
+  chunkCount: Int
   createdAt: DateTime!
   updatedAt: DateTime!
+}
+
+type DocumentChunk {
+  id: ID!
+  documentId: ID!
+  workspaceId: ID!
+  pageNumber: Int
+  sectionHeading: String
+  chunkIndex: Int!
+  content: String!
+  tokenCount: Int!
+  createdAt: DateTime!
 }
 
 type OpenRouterModel {
@@ -158,6 +171,7 @@ type Query {
   documents(workspaceId: ID!): [Document!]!
   document(id: ID!): Document
   documentDownloadUrl(id: ID!): DocumentDownloadPayload!
+  documentChunks(documentId: ID!): [DocumentChunk!]!
   whatsAppLogs(limit: Int): [WhatsAppLog!]!
 }
 
@@ -181,6 +195,7 @@ type Mutation {
 
   createDocumentUpload(input: CreateDocumentUploadInput!): DocumentUploadPayload!
   confirmDocumentUpload(input: ConfirmDocumentUploadInput!): Document!
+  processDocument(id: ID!): Document!
   deleteDocument(id: ID!): Boolean!
 }
 

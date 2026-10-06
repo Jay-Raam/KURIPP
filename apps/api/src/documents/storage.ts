@@ -64,4 +64,23 @@ export const StorageService = {
       console.warn(`[StorageService] Failed to delete object ${objectKey}:`, error);
     }
   },
+
+  /**
+   * Reads object content as UTF-8 string if available in storage.
+   */
+  async getObjectText(objectKey: string): Promise<string> {
+    try {
+      const command = new GetObjectCommand({
+        Bucket: env.S3_BUCKET,
+        Key: objectKey,
+      });
+      const response = await s3Client.send(command);
+      if (response.Body) {
+        return await response.Body.transformToString();
+      }
+      return '';
+    } catch {
+      return '';
+    }
+  },
 };
