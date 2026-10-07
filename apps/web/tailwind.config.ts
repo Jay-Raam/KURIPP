@@ -50,6 +50,19 @@ const config: Config = {
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+        'geological-display': [
+          '"Neue Haas Grotesk Display Pro"',
+          '"Helvetica Neue"',
+          'Inter',
+          '-apple-system',
+          'sans-serif',
+        ],
+        'geological-mono': [
+          '"ABC Monument Grotesk Mono"',
+          '"JetBrains Mono"',
+          'ui-monospace',
+          'monospace',
+        ],
       },
     },
   },

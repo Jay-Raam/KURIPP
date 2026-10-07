@@ -47,14 +47,62 @@
     --input: 240 4% 16%;
     --ring: 240 5% 84%;
   }
+
+  /* Scoped Geological Design System for Public / Open Routes Only */
+  .geological-theme {
+    --background: 43 14% 91%;
+    --foreground: 240 3% 16%;
+    --card: 43 12% 94%;
+    --card-foreground: 240 3% 16%;
+    --popover: 43 12% 94%;
+    --popover-foreground: 240 3% 16%;
+    --primary: 240 3% 16%;
+    --primary-foreground: 43 14% 91%;
+    --secondary: 43 10% 86%;
+    --secondary-foreground: 240 3% 16%;
+    --muted: 43 8% 84%;
+    --muted-foreground: 240 4% 42%;
+    --accent: 43 12% 82%;
+    --accent-foreground: 240 3% 16%;
+    --border: 240 3% 16% / 0.10;
+    --input: 240 3% 16% / 0.12;
+    --ring: 240 3% 16%;
+    font-family: "Neue Haas Grotesk Display Pro", "Helvetica Neue", Inter, -apple-system, sans-serif;
+  }
+
+  .dark .geological-theme,
+  .geological-theme.dark {
+    --background: 0 0% 5.5%;
+    --foreground: 43 14% 91%;
+    --card: 0 0% 8.6%;
+    --card-foreground: 43 14% 91%;
+    --popover: 0 0% 8.6%;
+    --popover-foreground: 43 14% 91%;
+    --primary: 43 14% 91%;
+    --primary-foreground: 0 0% 5.5%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 43 14% 91%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 43 10% 60%;
+    --accent: 0 0% 15%;
+    --accent-foreground: 43 14% 91%;
+    --border: 43 14% 91% / 0.10;
+    --input: 43 14% 91% / 0.12;
+    --ring: 43 14% 91%;
+    font-family: "Neue Haas Grotesk Display Pro", "Helvetica Neue", Inter, -apple-system, sans-serif;
+  }
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground antialiased selection:bg-neutral-800 selection:text-neutral-100;
+    transition: background-color 0.5s cubic-bezier(0.16, 1, 0.3, 1), color 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
