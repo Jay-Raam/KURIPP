@@ -13,6 +13,20 @@
 
 ---
 
+## Start Here (5-Minute Code Review)
+
+If you are evaluating KURIPP for technical depth, security architecture, and AI retrieval rigor, review these core files:
+
+| Dimension | File / Directory | What to Inspect |
+| :--- | :--- | :--- |
+| **Hybrid Search (RRF $k=60$)** | [`apps/api/src/search/search.service.ts`](apps/api/src/search/search.service.ts) | Reciprocal Rank Fusion combining dense 1536-dim vector embeddings with BM25 lexical token matching in a single query |
+| **Zero-Storage Auth Guard** | [`apps/api/src/auth/auth.middleware.ts`](apps/api/src/auth/auth.middleware.ts) | In-memory JWT access tokens + HttpOnly session rotation (RTR) with zero browser persistent storage exposure |
+| **Deep Research Decomposition** | [`apps/api/src/research/research.service.ts`](apps/api/src/research/research.service.ts) | Autonomous multi-angle query decomposition and cross-document evidence synthesis pipeline |
+| **AI Evaluation Benchmark** | [`apps/api/src/evaluation/evaluation.service.ts`](apps/api/src/evaluation/evaluation.service.ts) | Automated evaluation test harness asserting Groundedness ($\ge 90\%$) and Hallucination Index |
+| **Document Intelligence Engine** | [`services/ai/`](services/ai/) | High-throughput Python 3.11+ `uv` FastAPI layout parser and semantic boundary chunker |
+
+---
+
 ## 1. Overview & Vision
 
 **KURIPP** is a personal and team knowledge workspace designed from the ground up for strict security, rigorous document intelligence, and grounded AI synthesis.
@@ -85,6 +99,17 @@ flowchart TD
     Webhooks --> AlertsSvc
     AlertsSvc -->|Evolution API Webhook| WhatsApp[(WhatsApp Admin)]
 ```
+
+---
+
+## Key Engineering Decisions & Trade-Offs
+
+| Decision | Why It Was Made | Alternative Considered & Why Rejected |
+| :--- | :--- | :--- |
+| **Hybrid Search via RRF ($k=60$) over Vector-Only** | Pure vector embeddings suffer from semantic drift on specific keywords, acronyms, and product codes (e.g. "REV-2026-X"). Reciprocal Rank Fusion ($k=60$) perfectly fuses dense cosine similarity with BM25 lexical token match. | Standalone vector DB (Pinecone/Weaviate). Rejected because PostgreSQL 17 with `pgvector` co-locates relational ACID permissions, workspace filters, and vector embeddings in a single atomic query with zero network hop latency. |
+| **In-Memory JWT Access Tokens & HttpOnly Refresh Cookies** | Completely prevents Cross-Site Scripting (XSS) credential theft. Tokens never touch `localStorage`, `sessionStorage`, or `IndexedDB`. | Storing JWTs in `localStorage`. Rejected because any XSS vulnerability or malicious browser extension could exfiltrate bearer credentials. |
+| **Strict GraphQL Yoga Gateway with AST Depth Limiting** | Eliminates multiple REST endpoint sprawl and prevents Denial of Service (DoS) attacks via nested circular query exploitation. AST complexity budgets enforce pagination and depth <= 12. | RESTful API controllers. Rejected because deep research graph traversals across documents, citations, and workspaces require precise field selection without over-fetching. |
+| **Polyglot Persistence (Postgres + Mongo + Redis)** | PostgreSQL stores canonical relational entities and vectors; MongoDB stores variable-length multi-turn LLM reasoning traces; Redis provides sub-millisecond deduplication and rate-limiting. | Forcing all workloads into a single database. Rejected because relational schemas degrade under massive polymorphic JSON LLM transcripts, while pure NoSQL databases lack strict foreign keys for RBAC. |
 
 ---
 
